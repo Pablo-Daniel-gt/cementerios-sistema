@@ -1,0 +1,11 @@
+# Framework Web Principal
+Django>=5.0,<6.0
+# API REST Framework y CORS
+djangorestframework>=3.14.0
+django-cors-headers>=4.3.0
+# Conector de PostgreSQL para Python
+psycopg2-binary>=2.9.9
+# Manejo de variables de entorno (.env)
+python-dotenv>=1.0.0
+# Generación de reportes PDF
+reportlab>=4.0.0
