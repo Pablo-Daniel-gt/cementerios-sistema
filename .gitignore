@@ -1,0 +1,24 @@
+# Entornos virtuales
+venv/
+env/
+ENV/
+# Archivos de configuración sensible y variables de entorno
+.env
+*.env
+# Archivos compilados de Python
+__pycache__/
+*.py[cod]
+*$py.class
+# Base de datos SQLite local (por si se genera accidentalmente)
+*.sqlite3
+*.sqlite3-journal
+# Archivos de medios subidos por usuarios (PDFs de RENAP/DPI)
+media/
+# Carpetas de editores e IDEs
+.vscode/
+.idea/
+*.swp
+# Archivos de sistema operativo
+Thumbs.db
+Desktop.ini
+.DS_Store
