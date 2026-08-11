@@ -36,13 +36,26 @@ ALLOWED_HOSTS = []
 # Application definition
 
 INSTALLED_APPS = [
+    # Aplicaciones nativas de Django
     'django.contrib.admin',
     'django.contrib.auth',
     'django.contrib.contenttypes',
     'django.contrib.sessions',
     'django.contrib.messages',
     'django.contrib.staticfiles',
+    
+    # Librerías de terceros (DRF)
+    'rest_framework',
+
+    # Aplicaciones del proyecto (Módulos de negocio)
+    'apps.cuentas',  # Módulo A: Autenticación, Usuarios, Clientes y Auditoría
 ]
+
+# Configuración del Modelo de Usuario Personalizado
+# Le indica a Django que utilice 'Usuario' de la app 'cuentas' en lugar de auth.User nativo.
+AUTH_USER_MODEL = 'cuentas.Usuario'
+
+
 
 MIDDLEWARE = [
     'django.middleware.security.SecurityMiddleware',

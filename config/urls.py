@@ -1,22 +1,24 @@
 """
-URL configuration for config project.
+CONFIGURACIÓN GLOBAL DE RUTAS DE URL (config/urls.py)
 
-The `urlpatterns` list routes URLs to views. For more information please see:
-    https://docs.djangoproject.com/en/5.2/topics/http/urls/
-Examples:
-Function views
-    1. Add an import:  from my_app import views
-    2. Add a URL to urlpatterns:  path('', views.home, name='home')
-Class-based views
-    1. Add an import:  from other_app.views import Home
-    2. Add a URL to urlpatterns:  path('', Home.as_view(), name='home')
-Including another URLconf
-    1. Import the include() function: from django.urls import include, path
-    2. Add a URL to urlpatterns:  path('blog/', include('blog.urls'))
+Este archivo centraliza el enrutamiento principal del sistema web del cementerio.
+Redirige el tráfico HTTP entrante hacia el panel de administración (/admin/)
+y hacia las APIs REST de los distintos módulos del sistema bajo la versión 1 (/api/v1/).
 """
+
 from django.contrib import admin
-from django.urls import path
+from django.urls import path, include
 
 urlpatterns = [
+    # Panel de Administración Nativo de Django
     path('admin/', admin.site.urls),
+
+    # Módulo A: API REST de Cuentas (Roles, Usuarios, Clientes y Bitácora)
+    # Prefijo global: /api/v1/cuentas/
+    # Ejemplo de endpoints finales:
+    # - GET /api/v1/cuentas/roles/
+    # - GET /api/v1/cuentas/usuarios/
+    # - GET /api/v1/cuentas/clientes/
+    # - GET /api/v1/cuentas/bitacora/
+    path('api/v1/cuentas/', include('apps.cuentas.urls')),
 ]
