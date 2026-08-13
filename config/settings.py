@@ -44,8 +44,12 @@ INSTALLED_APPS = [
     'django.contrib.messages',
     'django.contrib.staticfiles',
     
-    # Librerías de terceros (DRF)
+    # Librerías de terceros (DRF y CORS)
     'rest_framework',
+    # Documentación de la API
+    'drf_spectacular',
+    
+    'corsheaders',
 
     # Aplicaciones del proyecto (Módulos de negocio)
     'apps.cuentas',  # Módulo A: Autenticación, Usuarios, Clientes y Auditoría
@@ -58,6 +62,7 @@ AUTH_USER_MODEL = 'cuentas.Usuario'
 
 
 MIDDLEWARE = [
+    'corsheaders.middleware.CorsMiddleware',
     'django.middleware.security.SecurityMiddleware',
     'django.contrib.sessions.middleware.SessionMiddleware',
     'django.middleware.common.CommonMiddleware',
@@ -142,3 +147,7 @@ STATIC_URL = 'static/'
 # https://docs.djangoproject.com/en/5.2/ref/settings/#default-auto-field
 
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
+
+REST_FRAMEWORK = {
+    'DEFAULT_SCHEMA_CLASS': 'drf_spectacular.openapi.AutoSchema',  # Para la documentación de la API
+}

@@ -18,6 +18,7 @@ De forma idéntica genera la estructura para usuarios, clientes y bitacora.
 
 from django.urls import path, include
 from rest_framework.routers import DefaultRouter
+from drf_spectacular.views import SpectacularAPIView, SpectacularRedocView, SpectacularSwaggerView
 from .views import (
     RolViewSet,
     UsuarioViewSet,
@@ -45,4 +46,10 @@ router.register(r'bitacora', BitacoraViewSet, basename='bitacora')
 urlpatterns = [
     # Incluye automáticamente todas las rutas generadas por el DefaultRouter
     path('', include(router.urls)),
+    # Ruta base para el esquema de documentación de la API (OpenAPI/Swagger)
+    path('api/schema/', SpectacularAPIView.as_view(), name='schema'),
+    # Ruta para la documentación interactiva de Swagger UI
+    path('api/docs/swagger/', SpectacularSwaggerView.as_view(url_name='schema'), name='swagger-ui'),
+    # Ruta para la documentación interactiva de Redoc
+    path('api/docs/redoc/', SpectacularRedocView.as_view(url_name='schema'), name='redoc'),
 ]
