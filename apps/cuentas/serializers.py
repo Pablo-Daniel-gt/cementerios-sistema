@@ -59,6 +59,14 @@ class UsuarioSerializer(serializers.ModelSerializer):
         help_text="Nombre del rol asignado (campo descriptivo de solo lectura)"
     )
 
+    # Campo de solo lectura para indicar el ID del perfil de cliente asociado si existe
+    cliente_id = serializers.ReadOnlyField(
+        source='cliente_perfil.id',
+        read_only=True,
+        default=None,
+        help_text="ID del perfil cliente vinculado (si aplica)"
+    )
+
     class Meta:
         model = Usuario
         # Campos expuestos en la API REST para la entidad Usuario
@@ -71,6 +79,7 @@ class UsuarioSerializer(serializers.ModelSerializer):
             'last_name', 
             'rol', 
             'rol_nombre',
+            'cliente_id',
             'telefono', 
             'is_active', 
             'is_staff', 
