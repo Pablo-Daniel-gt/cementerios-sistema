@@ -26,3 +26,11 @@ Desktop.ini
 # Archivos del frontend 
 client/node_modules/
 client/dist/
+
+# Archivos extra: instrucciones .md y .txt
+skills/
+instructions/
+
+# Prototipos UI y Mockups temporales (no subir a git)
+prototipos_ui/
+mockups/
