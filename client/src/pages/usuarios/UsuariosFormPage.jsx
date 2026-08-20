@@ -242,7 +242,7 @@ export const UsuariosFormPage = () => {
                     value={currentClienteId || ''}
                     onChange={handleClienteChange}
                   >
-                    <option value="">Sin Cliente Asociado (Crear Cuenta Nueva)</option>
+                    <option value=""disabled hidden>Sin Cliente Asociado (Crear Cuenta Nueva)</option>
                     {clientesDisponibles.map((c) => (
                       <option key={c.id} value={c.id}>
                         {c.nombres} {c.apellidos} (DPI: {c.cui})

@@ -141,10 +141,10 @@ export const ClientesFormPage = () => {
                   value={currentUsuarioId || ''}
                   onChange={handleUsuarioChange}
                 >
-                  <option value="">-- Sin Cuenta de Usuario Asociada --</option>
+                  <option value="" disabled hidden>-- Sin Cuenta de Usuario Asociada --</option>
                   {usuariosDisponibles.map((u) => (
                     <option key={u.id} value={u.id}>
-                      {u.username} ({u.first_name || u.email || 'Sin nombre'}) - ID: #{u.id}
+                      {u.username} ({u.first_name || u.email || 'Sin nombre'})
                     </option>
                   ))}
                 </select>

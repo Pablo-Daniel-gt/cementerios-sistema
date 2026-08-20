@@ -9,6 +9,8 @@ import { RolesPage } from '../pages/roles/RolesPage';
 import { RolesFormPage } from '../pages/roles/RolesFormPage';
 import { BitacoraPage } from '../pages/bitacora/BitacoraPage';
 import { PortalClientePage } from '../pages/portal_cliente/PortalClientePage';
+import { InventarioPage } from '../pages/inventario/InventarioPage';
+import { EstructurasPage } from '../pages/inventario/EstructurasPage';
 import { ProtectedRoute } from './ProtectedRoute';
 import { Layout } from '../components/Layout';
 import { useAuth } from '../context/AuthContext';
@@ -46,6 +48,12 @@ export const AppRouter = () => {
         {/* Dashboard: Administrador, Asesor Comercial, Secretaria */}
         <Route element={<ProtectedRoute allowedRoles={['Administrador', 'Asesor Comercial', 'Secretaria']} />}>
           <Route path="/dashboard" element={<DashboardPage />} />
+        </Route>
+
+        {/* Módulo B - Inventario de Camposanto (Matriz 2D): Administrador, Asesor Comercial, Secretaria */}
+        <Route element={<ProtectedRoute allowedRoles={['Administrador', 'Asesor Comercial', 'Secretaria']} />}>
+          <Route path="/inventario" element={<InventarioPage />} />
+          <Route path="/inventario/estructuras" element={<EstructurasPage />} />
         </Route>
 
         {/* Clientes: Administrador, Asesor Comercial, Secretaria */}

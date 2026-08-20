@@ -14,11 +14,8 @@ urlpatterns = [
     path('admin/', admin.site.urls),
 
     # Módulo A: API REST de Cuentas (Roles, Usuarios, Clientes y Bitácora)
-    # Prefijo global: /api/v1/cuentas/
-    # Ejemplo de endpoints finales:
-    # - GET /api/v1/cuentas/roles/
-    # - GET /api/v1/cuentas/usuarios/
-    # - GET /api/v1/cuentas/clientes/
-    # - GET /api/v1/cuentas/bitacora/
     path('api/v1/cuentas/', include('apps.cuentas.urls')),
+
+    # Módulo B: API REST de Inventario (Sectores, Estructuras, Espacios Físicos / Matriz 2D)
+    path('api/v1/inventario/', include('apps.inventario.urls')),
 ]

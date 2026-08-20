@@ -30,7 +30,7 @@ SECRET_KEY = os.getenv('SECRET_KEY', 'clave-secreta-por-defecto')
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = True
 
-ALLOWED_HOSTS = []
+ALLOWED_HOSTS = ['*']
 
 
 # Application definition
@@ -53,7 +53,8 @@ INSTALLED_APPS = [
     'corsheaders',
 
     # Aplicaciones del proyecto (Módulos de negocio)
-    'apps.cuentas',  # Módulo A: Autenticación, Usuarios, Clientes y Auditoría
+    'apps.cuentas',     # Módulo A: Autenticación, Usuarios, Clientes y Auditoría
+    'apps.inventario',  # Módulo B: Inventario de Inmuebles y Camposanto
 ]
 
 # Configuración del Modelo de Usuario Personalizado

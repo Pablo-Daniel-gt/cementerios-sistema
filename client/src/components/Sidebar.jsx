@@ -12,7 +12,7 @@ export const Sidebar = () => {
         <h6 className="text-uppercase tracking-wider fw-bold text-light mb-0" style={{ letterSpacing: '1px' }}>
           Sistema Web
         </h6>
-        <small className="text-muted">Módulo de Cuentas</small>
+        <small className="text-muted">CEMENTERIOS</small>
       </div>
 
       <nav className="nav nav-pills flex-column mb-auto">
@@ -23,7 +23,25 @@ export const Sidebar = () => {
               className={({ isActive }) => `nav-link ${isActive ? 'active' : ''}`}
             >
               <i className="bi bi-speedometer2"></i>
-              <span>Dashboard</span>
+              <span>Panel de Control</span>
+            </NavLink>
+
+            {/* Módulo B: Inventario de Inmuebles y Camposanto */}
+            <NavLink
+              to="/inventario"
+              end
+              className={({ isActive }) => `nav-link ${isActive ? 'active' : ''}`}
+            >
+              <i className="bi bi-grid-3x3-gap-fill text-info"></i>
+              <span>Inventario</span>
+            </NavLink>
+
+            <NavLink
+              to="/inventario/estructuras"
+              className={({ isActive }) => `nav-link ${isActive ? 'active' : ''}`}
+            >
+              <i className="bi bi-building"></i>
+              <span>Sectores / Estructuras</span>
             </NavLink>
 
             <NavLink

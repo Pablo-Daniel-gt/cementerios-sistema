@@ -1,9 +1,9 @@
 import axios from 'axios';
 import toast from 'react-hot-toast';
 
-// Instancia centralizada de Axios apuntando al Módulo A de cuentas
+// Instancia centralizada de Axios apuntando a la versión 1 de la API (/api/v1/)
 const instance = axios.create({
-  baseURL: 'http://127.0.0.1:8000/api/v1/cuentas/',
+  baseURL: 'http://127.0.0.1:8000/api/v1/',
   headers: {
     'Content-Type': 'application/json',
   },
