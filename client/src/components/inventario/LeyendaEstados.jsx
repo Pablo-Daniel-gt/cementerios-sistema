@@ -38,7 +38,7 @@ export function LeyendaEstados({ contadores = {} }) {
         <div className="d-flex align-items-center justify-content-between flex-wrap gap-2 mb-2">
           <h6 className="card-title m-0 fw-bold text-secondary d-flex align-items-center gap-2">
             <i className="bi bi-palette-fill text-primary"></i>
-            Leyenda de Disponibilidad e Indicadores
+            Información de Estados de Nichos
           </h6>
         </div>
 

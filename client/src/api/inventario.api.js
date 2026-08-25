@@ -110,7 +110,7 @@ export const crearEspacio = (datos) => {
 };
 
 export const actualizarEspacio = (idEspacio, datos) => {
-  return axios.put(`inventario/espacios/${idEspacio}/`, datos);
+  return axios.patch(`inventario/espacios/${idEspacio}/`, datos);
 };
 
 export const eliminarEspacio = (idEspacio) => {

@@ -51,14 +51,27 @@ instance.interceptors.response.use(
           toast.error(data?.detail || data?.error || 'El recurso solicitado no existe.');
           break;
         case 400:
-          if (typeof data === 'object') {
+          if (typeof data === 'object' && data !== null) {
             const firstKey = Object.keys(data)[0];
-            const msg = Array.isArray(data[firstKey]) ? data[firstKey][0] : data[firstKey];
-            toast.error(`Error en datos: ${firstKey} - ${msg}`);
+            let msg = data[firstKey];
+            if (Array.isArray(msg)) msg = msg[0];
+            if (typeof msg === 'object' && msg !== null) {
+              const subKey = Object.keys(msg)[0];
+              const subVal = Array.isArray(msg[subKey]) ? msg[subKey][0] : msg[subKey];
+              msg = `${subVal}`;
+            }
+
+            // Detectar errores de restricción de unicidad técnica (unique constraint / conjunto único de DRF)
+            if (typeof msg === 'string' && (msg.includes('conjunto único') || msg.includes('unique constraint') || msg.includes('unique set'))) {
+              msg = 'No es posible registrar o mover el nicho a esta posición, ya existe un nicho creado anteriormente en esa coordenada. Por favor asigne el espacio correspondiente.';
+            }
+
+            toast.error(msg);
           } else {
             toast.error(data?.error || 'Petición incorrecta.');
           }
           break;
+
         case 500:
           toast.error('Error interno del servidor. Por favor intente más tarde.');
           break;

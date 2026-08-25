@@ -142,3 +142,38 @@ class InventarioAPITestCase(TestCase):
         self.assertIn('matriz_espacios', data)
         self.assertEqual(len(data['matriz_espacios']), 1)
         self.assertEqual(data['matriz_espacios'][0]['codigo_unico_espacio'], 'SEC-A-PAB-01-F1-C1')
+
+    def test_actualizacion_parcial_espacio(self):
+        """Valida que actualizar un nicho sin enviar fila/columna funcione correctamente (200 OK)."""
+        url = f'/api/v1/inventario/espacios/{self.espacio.id_espacio}/'
+        payload = {
+            "precio_individual": 18000.00,
+            "material_construccion": "Mármol"
+        }
+        response = self.client.patch(url, payload, format='json')
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.espacio.refresh_from_db()
+        self.assertEqual(float(self.espacio.precio_individual), 18000.00)
+
+    def test_posicion_duplicada_mensaje_amigable(self):
+        """Valida que intentar registrar un nicho en una coordenada ocupada devuelva un error amigable (400 Bad Request)."""
+        url = '/api/v1/inventario/espacios/'
+        payload = {
+            "estructura": self.estructura.id_estructura,
+            "estado": self.estado_disponible.id_estado,
+            "posicion_fila": 1,
+            "posicion_columna": 1
+        }
+        response = self.client.post(url, payload, format='json')
+        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+        self.assertIn("No es posible registrar o mover el nicho", str(response.data))
+
+    def test_actualizacion_estado_str_resuelto_a_pk(self):
+        """Valida que si se envía el nombre del estado en string (ej. 'Disponible'), se resuelva correctamente sin error 400 de tipado."""
+        url = f'/api/v1/inventario/espacios/{self.espacio.id_espacio}/'
+        payload = {
+            "estado": "Disponible",
+            "precio_individual": 20000.00
+        }
+        response = self.client.patch(url, payload, format='json')
+        self.assertEqual(response.status_code, status.HTTP_200_OK)

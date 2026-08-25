@@ -71,7 +71,7 @@ export const DashboardPage = () => {
               <div className="card h-100 border-0 shadow-sm bg-white border-start border-primary border-4">
                 <div className="card-body d-flex align-items-center justify-content-between">
                   <div>
-                    <h6 className="text-uppercase text-muted fw-bold small mb-1">Estructuras / Pabellones</h6>
+                    <h6 className="text-uppercase text-muted fw-bold small mb-1">Estructuras</h6>
                     <h2 className="fw-bold mb-0 text-primary">{stats.estructuras}</h2>
                     <small className="text-muted">{stats.sectores} Sectores activos</small>
                   </div>

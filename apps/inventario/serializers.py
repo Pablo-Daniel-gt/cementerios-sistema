@@ -56,10 +56,67 @@ class EspacioFisicoSerializer(serializers.ModelSerializer):
     """
     estado_nombre = serializers.ReadOnlyField(source='estado.nombre_estado')
     estructura_nombre = serializers.ReadOnlyField(source='estructura.nombre_estructura')
+    en_contrato = serializers.SerializerMethodField()
+
+    posicion_fila = serializers.IntegerField(required=False, min_value=1)
+    posicion_columna = serializers.IntegerField(required=False, min_value=1)
+    estructura = serializers.PrimaryKeyRelatedField(queryset=EstructuraFisica.objects.all(), required=False)
+    estado = serializers.PrimaryKeyRelatedField(queryset=EstadoEspacio.objects.all(), required=False)
 
     class Meta:
         model = EspacioFisico
         fields = '__all__'
+        validators = []
+
+    def get_en_contrato(self, obj):
+        return hasattr(obj, 'detalle_contrato') and obj.detalle_contrato is not None
+
+    def to_internal_value(self, data):
+        data = data.copy()
+        if 'estado' in data:
+            val = data['estado']
+            if isinstance(val, str) and not val.isdigit():
+                try:
+                    obj = EstadoEspacio.objects.get(nombre_estado=val)
+                    data['estado'] = obj.pk
+                except Exception:
+                    data.pop('estado', None)
+        if 'estructura' in data:
+            val = data['estructura']
+            if isinstance(val, str) and not val.isdigit():
+                data.pop('estructura', None)
+        return super().to_internal_value(data)
+
+    def validate(self, attrs):
+        estructura = attrs.get('estructura') or (self.instance.estructura if self.instance else None)
+        posicion_fila = attrs.get('posicion_fila') if 'posicion_fila' in attrs else (self.instance.posicion_fila if self.instance else None)
+        posicion_columna = attrs.get('posicion_columna') if 'posicion_columna' in attrs else (self.instance.posicion_columna if self.instance else None)
+
+        if estructura and posicion_fila is not None and posicion_columna is not None:
+            if posicion_fila > estructura.total_filas:
+                raise serializers.ValidationError({
+                    'posicion_fila': f'La fila ({posicion_fila}) excede el límite máximo de filas de la estructura ({estructura.total_filas}).'
+                })
+            if posicion_columna > estructura.total_columnas:
+                raise serializers.ValidationError({
+                    'posicion_columna': f'La columna ({posicion_columna}) excede el límite máximo de columnas de la estructura ({estructura.total_columnas}).'
+                })
+
+            # Validar existencia de nicho en misma posición dentro de la estructura
+            query = EspacioFisico.objects.filter(
+                estructura=estructura,
+                posicion_fila=posicion_fila,
+                posicion_columna=posicion_columna
+            )
+            if self.instance:
+                query = query.exclude(pk=self.instance.pk)
+
+            if query.exists():
+                raise serializers.ValidationError(
+                    f"No es posible registrar o mover el nicho a esta posición (Fila {posicion_fila} - Columna {posicion_columna}). Por favor asigne el espacio correspondiente."
+                )
+
+        return attrs
 
 
 # ==============================================================================
@@ -72,10 +129,23 @@ class EstructuraFisicaSerializer(serializers.ModelSerializer):
     """
     sector_nombre = serializers.ReadOnlyField(source='sector.nombre_sector')
     tipo_estructura_nombre = serializers.ReadOnlyField(source='tipo_estructura.nombre_tipo')
+    disponible_completa = serializers.SerializerMethodField()
+    total_espacios_creados = serializers.SerializerMethodField()
 
     class Meta:
         model = EstructuraFisica
         fields = '__all__'
+
+    def get_disponible_completa(self, obj):
+        total = obj.espacios.count()
+        if total == 0:
+            return False
+        disponibles = obj.espacios.filter(estado__nombre_estado='Disponible', detalle_contrato__isnull=True).count()
+        return disponibles == total
+
+    def get_total_espacios_creados(self, obj):
+        return obj.espacios.count()
+
 
 
 # ==============================================================================

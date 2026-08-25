@@ -18,4 +18,8 @@ urlpatterns = [
 
     # Módulo B: API REST de Inventario (Sectores, Estructuras, Espacios Físicos / Matriz 2D)
     path('api/v1/inventario/', include('apps.inventario.urls')),
+
+    # Módulo C: API REST Comercial y Financiera (Contratos, Cotizaciones, Caja y Alertas de Mora)
+    path('api/v1/comercial/', include('apps.comercial.urls')),
 ]
+

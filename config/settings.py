@@ -55,6 +55,7 @@ INSTALLED_APPS = [
     # Aplicaciones del proyecto (Módulos de negocio)
     'apps.cuentas',     # Módulo A: Autenticación, Usuarios, Clientes y Auditoría
     'apps.inventario',  # Módulo B: Inventario de Inmuebles y Camposanto
+    'apps.comercial',   # Módulo C: Gestión Comercial y Financiera
 ]
 
 # Configuración del Modelo de Usuario Personalizado

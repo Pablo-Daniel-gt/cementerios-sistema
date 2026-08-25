@@ -138,6 +138,11 @@ export function InventarioPage() {
     );
   }
 
+  const estSeleccionadaObj = estructuras.find((e) => Number(e.id_estructura) === Number(selectedEstructuraId));
+  const capacidadTotal = matrizData ? (matrizData.total_filas * matrizData.total_columnas) : (estSeleccionadaObj ? estSeleccionadaObj.capacidad_total_espacios : 0);
+  const totalNichosCreados = matrizData && matrizData.matriz_espacios ? matrizData.matriz_espacios.length : (estSeleccionadaObj ? (estSeleccionadaObj.total_espacios_creados || 0) : 0);
+  const isEstructuraLlena = capacidadTotal > 0 && totalNichosCreados >= capacidadTotal;
+
   return (
     <div className="container-fluid p-4">
       {/* Encabezado Principal de la Página */}
@@ -156,7 +161,8 @@ export function InventarioPage() {
           <button
             onClick={handleGenerarLoteActual}
             className="btn btn-outline-success d-flex align-items-center gap-1"
-            disabled={!selectedEstructuraId}
+            disabled={!selectedEstructuraId || isEstructuraLlena}
+            title={isEstructuraLlena ? "La estructura ya ha alcanzado el 100% de su capacidad de nichos" : ""}
           >
             <i className="bi bi-magic"></i>
             Generar Nichos en Lote
@@ -164,6 +170,8 @@ export function InventarioPage() {
           <button
             onClick={() => setShowNichoFormModal(true)}
             className="btn btn-success d-flex align-items-center gap-1"
+            disabled={!selectedEstructuraId || isEstructuraLlena}
+            title={isEstructuraLlena ? "La estructura ya ha alcanzado el 100% de su capacidad de nichos" : ""}
           >
             <i className="bi bi-plus-circle-fill"></i>
             Nuevo Nicho Individual

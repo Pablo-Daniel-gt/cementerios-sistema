@@ -1,21 +1,58 @@
-/* Estilos Globales - Sistema Web Cementerios Privados de Huehuetenango */
+/* ==============================================================================
+   SISTEMA WEB CEMENTERIOS PRIVADOS DE HUEHUETENANGO
+   Estilos Globales y Sistema de Diseño Empático y Sereno (UI/UX)
+   ============================================================================== */
 
 :root {
-  --primary-color: #2b3a4a;
-  --secondary-color: #4a6572;
-  --accent-color: #1b6ca8;
-  --bg-light: #f4f6f9;
-  --sidebar-width: 250px;
-  --text-main: #333333;
+  /* Paleta de Colores Principal (Serena, Dignificada y Profesional) */
+  --primary-dark: #1E293B;       /* Azul Slate Profundo (Branding & Sidebar Base) */
+  --primary-navy: #0F172A;       /* Azul Noche (Navbar y Encabezados Fuertes) */
+  --primary-hover: #334155;      /* Slate Medio (Hover en Navegación) */
+  
+  /* Acentos de Paz y Armonía (Sage Green) */
+  --sage-primary: #3B6D51;      /* Verde Salvia Paz (Acciones Primarias & Destacados) */
+  --sage-hover: #2D5740;        /* Verde Salvia Oscuro */
+  --sage-light: #E8F3ED;        /* Fondo Salvia Suave */
+  --sage-border: #C2E0CE;       /* Borde Salvia */
+
+  /* Neutrales Cálidos y Superficies */
+  --bg-app: #F8FAF9;            /* Fondo General (Crema / Alabastro Sereno) */
+  --bg-card: #FFFFFF;           /* Superficie de Tarjetas */
+  --border-subtle: #E2E8F0;     /* Bordes Suaves de Contenedores */
+  
+  /* Tipografía */
+  --font-main: 'Plus Jakarta Sans', system-ui, -apple-system, sans-serif;
+  --font-heading: 'Plus Jakarta Sans', system-ui, sans-serif;
+  --font-serif: 'Lora', Georgia, serif;
+  
+  --text-main: #1E293B;         /* Texto Principal Alta Legibilidad */
+  --text-muted: #64748B;        /* Texto Secundario / Descriptivo */
+  --text-light: #94A3B8;        /* Texto Atenuado */
+
+  /* Dimensiones y Sombras */
+  --sidebar-width: 260px;
+  --radius-sm: 8px;
+  --radius-md: 12px;
+  --radius-lg: 16px;
+  --shadow-subtle: 0 4px 20px -2px rgba(30, 41, 59, 0.05);
+  --shadow-hover: 0 10px 25px -5px rgba(30, 41, 59, 0.1);
+}
+
+/* Base Document Setup */
+*, *::before, *::after {
+  box-sizing: border-box;
 }
 
 body {
   margin: 0;
   padding: 0;
-  font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
-  background-color: var(--bg-light);
+  font-family: var(--font-main);
+  background-color: var(--bg-app);
   color: var(--text-main);
+  line-height: 1.6;
   min-height: 100vh;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
 }
 
 #root {
@@ -24,65 +61,173 @@ body {
   flex-direction: column;
 }
 
-/* Scrollbar personalizado */
+/* Tipografía Serena */
+h1, h2, h3, h4, h5, h6 {
+  font-family: var(--font-heading);
+  color: var(--primary-navy);
+  font-weight: 700;
+  letter-spacing: -0.02em;
+}
+
+.subtitle-serene {
+  font-family: var(--font-serif);
+  color: var(--text-muted);
+  font-style: italic;
+}
+
+/* Custom Scrollbars */
 ::-webkit-scrollbar {
   width: 6px;
   height: 6px;
 }
 ::-webkit-scrollbar-track {
-  background: #f1f1f1;
+  background: #F1F5F9;
 }
 ::-webkit-scrollbar-thumb {
-  background: #c1c1c1;
-  border-radius: 3px;
+  background: #CBD5E1;
+  border-radius: 4px;
 }
 ::-webkit-scrollbar-thumb:hover {
-  background: #a8a8a8;
+  background: #94A3B8;
 }
 
-/* Transiciones de botones */
+/* ==============================================================================
+   OVERWRITES DE BOOTSTRAP Y COMPONENTES UI
+   ============================================================================== */
+
+/* Buttons */
 .btn {
-  transition: all 0.2s ease-in-out;
-  border-radius: 6px;
+  font-family: var(--font-main);
+  font-weight: 600;
+  border-radius: var(--radius-sm);
+  padding: 0.55rem 1.25rem;
+  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+  letter-spacing: -0.01em;
 }
 
-/* Card styling elegante */
+.btn:hover {
+  transform: translateY(-1px);
+}
+
+.btn-primary {
+  background-color: var(--sage-primary) !important;
+  border-color: var(--sage-primary) !important;
+  color: #ffffff !important;
+}
+
+.btn-primary:hover, .btn-primary:focus {
+  background-color: var(--sage-hover) !important;
+  border-color: var(--sage-hover) !important;
+  box-shadow: 0 4px 12px rgba(59, 109, 81, 0.25) !important;
+}
+
+.btn-outline-primary {
+  color: var(--sage-primary) !important;
+  border-color: var(--sage-primary) !important;
+}
+
+.btn-outline-primary:hover {
+  background-color: var(--sage-primary) !important;
+  color: #ffffff !important;
+}
+
+.btn-secondary {
+  background-color: #64748B !important;
+  border-color: #64748B !important;
+}
+
+/* Cards & Containers */
 .card {
-  border: 1px solid rgba(0,0,0,0.08);
-  border-radius: 8px;
-  box-shadow: 0 2px 8px rgba(0,0,0,0.03);
+  background-color: var(--bg-card);
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-md);
+  box-shadow: var(--shadow-subtle);
+  transition: box-shadow 0.25s ease, transform 0.25s ease;
 }
 
-.table-responsive {
-  border-radius: 8px;
+.card-header {
+  border-bottom: 1px solid var(--border-subtle);
+  border-top-left-radius: var(--radius-md) !important;
+  border-top-right-radius: var(--radius-md) !important;
 }
 
-/* Estilos de la barra lateral */
+/* Form Controls & Inputs */
+.form-control, .form-select {
+  font-family: var(--font-main);
+  border-radius: var(--radius-sm);
+  border: 1px solid #CBD5E1;
+  padding: 0.6rem 0.9rem;
+  font-size: 0.95rem;
+  color: var(--text-main);
+  transition: border-color 0.2s ease, box-shadow 0.2s ease;
+}
+
+.form-control:focus, .form-select:focus {
+  border-color: var(--sage-primary);
+  box-shadow: 0 0 0 3px rgba(59, 109, 81, 0.15);
+}
+
+/* Badges */
+.badge {
+  font-family: var(--font-main);
+  font-weight: 600;
+  padding: 0.45em 0.8em;
+  border-radius: 6px;
+  letter-spacing: 0.01em;
+}
+
+/* Modals */
+.modal-content {
+  border-radius: var(--radius-lg);
+  border: none;
+  box-shadow: 0 20px 40px -10px rgba(15, 23, 42, 0.2);
+}
+
+.modal-backdrop.show {
+  opacity: 0.65;
+  backdrop-filter: blur(4px);
+}
+
+/* Sidebar Styles */
 .sidebar-container {
   width: var(--sidebar-width);
-  background-color: var(--primary-color);
+  background-color: var(--primary-dark);
   min-height: 100vh;
-  color: #ffffff;
-  transition: all 0.3s;
+  color: #FFFFFF;
+  transition: all 0.3s ease;
+  box-shadow: 4px 0 20px rgba(0, 0, 0, 0.05);
 }
 
 .sidebar-container .nav-link {
-  color: #cfd8dc;
-  padding: 0.75rem 1.25rem;
-  border-radius: 4px;
+  color: #94A3B8;
+  padding: 0.75rem 1.1rem;
+  border-radius: var(--radius-sm);
   margin-bottom: 4px;
   display: flex;
   align-items: center;
-  gap: 10px;
+  gap: 12px;
   font-weight: 500;
+  font-size: 0.92rem;
+  transition: all 0.2s ease;
 }
 
-.sidebar-container .nav-link:hover,
+.sidebar-container .nav-link:hover {
+  color: #FFFFFF;
+  background-color: rgba(255, 255, 255, 0.07);
+}
+
 .sidebar-container .nav-link.active {
-  color: #ffffff;
-  background-color: rgba(255, 255, 255, 0.1);
+  color: #FFFFFF;
+  background-color: var(--sage-primary);
+  box-shadow: 0 4px 12px rgba(59, 109, 81, 0.3);
 }
 
 .sidebar-container .nav-link i {
-  font-size: 1.15rem;
+  font-size: 1.1rem;
+}
+
+/* Navbar Top */
+.navbar-custom {
+  background-color: var(--primary-navy);
+  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
 }

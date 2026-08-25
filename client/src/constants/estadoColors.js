@@ -1,11 +1,11 @@
-// Mapeo centralizado de colores de interfaz de usuario para estados de espacios físicos
+// Mapeo centralizado de colores de interfaz de usuario empática y serena para estados de espacios físicos
 export const ESTADO_COLORS = {
-  Disponible: '#28A745',
-  Reservado: '#FFC107',
-  Ocupado: '#DC3545',
-  Mantenimiento: '#17A2B8',
+  Disponible: '#2E7D32',   // Verde Salvia / Esmeralda Suave
+  Reservado: '#D97706',    // Ámbar Cobre Suave
+  Ocupado: '#991B1B',      // Terracota / Rojo Sobrio
+  Mantenimiento: '#2563EB',// Azul Acero Sereno
 };
 
 export const getEstadoColor = (nombreEstado) => {
-  return ESTADO_COLORS[nombreEstado] || '#6c757d';
+  return ESTADO_COLORS[nombreEstado] || '#64748B';
 };

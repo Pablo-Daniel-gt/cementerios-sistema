@@ -39,11 +39,11 @@ export function MatrizVisual({ estructura, espacios = [], onSelectNicho }) {
         <div className="d-flex align-items-center gap-3 bg-white bg-opacity-10 p-2 rounded">
           <div className="text-center px-2 border-end border-white border-opacity-25">
             <span className="d-block fw-bold fs-6">{estructura.total_filas}</span>
-            <small className="opacity-75" style={{ fontSize: '0.75rem' }}>Filas (Y)</small>
+            <small className="opacity-75" style={{ fontSize: '0.75rem' }}>Filas</small>
           </div>
           <div className="text-center px-2 border-end border-white border-opacity-25">
             <span className="d-block fw-bold fs-6">{estructura.total_columnas}</span>
-            <small className="opacity-75" style={{ fontSize: '0.75rem' }}>Columnas (X)</small>
+            <small className="opacity-75" style={{ fontSize: '0.75rem' }}>Columnas</small>
           </div>
           <div className="text-center px-2">
             <span className="d-block fw-bold fs-6">{estructura.capacidad_total_espacios}</span>

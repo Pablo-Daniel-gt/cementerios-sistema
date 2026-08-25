@@ -37,6 +37,9 @@ export function NichoFormModal({ nicho = null, estructuras = [], estados = [], d
     }
   }, [nicho, defaultEstructuraId, estructuras, estados]);
 
+  const estSeleccionadaModal = estructuras.find((e) => Number(e.id_estructura) === Number(formData.estructura));
+  const esEstructuraLlenaModal = !nicho && estSeleccionadaModal && estSeleccionadaModal.capacidad_total_espacios > 0 && ((estSeleccionadaModal.total_espacios_creados || 0) >= estSeleccionadaModal.capacidad_total_espacios);
+
   const handleSubmit = async (e) => {
     e.preventDefault();
     if (!formData.estructura) {
@@ -45,6 +48,10 @@ export function NichoFormModal({ nicho = null, estructuras = [], estados = [], d
     }
     if (!formData.estado) {
       toast.error('Debe seleccionar un Estado para el Nicho.');
+      return;
+    }
+    if (esEstructuraLlenaModal) {
+      toast.error('La estructura física ya ha alcanzado el 100% de su capacidad de nichos.');
       return;
     }
 
@@ -87,6 +94,12 @@ export function NichoFormModal({ nicho = null, estructuras = [], estados = [], d
 
           <form onSubmit={handleSubmit}>
             <div className="modal-body p-4">
+              {esEstructuraLlenaModal && (
+                <div className="alert alert-warning py-2 mb-3 small fw-bold">
+                  <i className="bi bi-exclamation-triangle-fill me-2"></i>
+                  Esta estructura física ya ha alcanzado el 100% de su capacidad ({estSeleccionadaModal.total_espacios_creados} / {estSeleccionadaModal.capacidad_total_espacios} nichos). No es posible registrar más nichos en ella.
+                </div>
+              )}
               <div className="row g-3">
                 {/* Estructura */}
                 <div className="col-12 col-md-6">
@@ -126,7 +139,7 @@ export function NichoFormModal({ nicho = null, estructuras = [], estados = [], d
 
                 {/* Posición Fila */}
                 <div className="col-12 col-md-3">
-                  <label className="form-label fw-bold">Posición Fila (Y) *</label>
+                  <label className="form-label fw-bold">Fila</label>
                   <input
                     type="number"
                     min="1"
@@ -139,7 +152,7 @@ export function NichoFormModal({ nicho = null, estructuras = [], estados = [], d
 
                 {/* Posición Columna */}
                 <div className="col-12 col-md-3">
-                  <label className="form-label fw-bold">Posición Columna (X) *</label>
+                  <label className="form-label fw-bold">Columna</label>
                   <input
                     type="number"
                     min="1"
@@ -202,7 +215,7 @@ export function NichoFormModal({ nicho = null, estructuras = [], estados = [], d
 
             <div className="modal-footer bg-light">
               <button type="button" className="btn btn-secondary" onClick={onClose}>Cancelar</button>
-              <button type="submit" className="btn btn-primary" disabled={loading}>
+              <button type="submit" className="btn btn-primary" disabled={loading || esEstructuraLlenaModal}>
                 {loading ? <span className="spinner-border spinner-border-sm"></span> : 'Guardar Nicho'}
               </button>
             </div>

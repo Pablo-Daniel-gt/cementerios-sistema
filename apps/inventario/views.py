@@ -141,10 +141,14 @@ class EspacioFisicoViewSet(viewsets.ModelViewSet):
         queryset = super().get_queryset()
         estructura_id = self.request.query_params.get('estructura', None)
         estado_id = self.request.query_params.get('estado', None)
+        solo_disponibles = self.request.query_params.get('solo_disponibles', None)
 
         if estructura_id:
             queryset = queryset.filter(estructura_id=estructura_id)
         if estado_id:
             queryset = queryset.filter(estado_id=estado_id)
+        if solo_disponibles == 'true':
+            queryset = queryset.filter(estado__nombre_estado='Disponible', detalle_contrato__isnull=True)
 
         return queryset
+

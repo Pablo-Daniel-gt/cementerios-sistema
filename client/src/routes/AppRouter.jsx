@@ -11,6 +11,11 @@ import { BitacoraPage } from '../pages/bitacora/BitacoraPage';
 import { PortalClientePage } from '../pages/portal_cliente/PortalClientePage';
 import { InventarioPage } from '../pages/inventario/InventarioPage';
 import { EstructurasPage } from '../pages/inventario/EstructurasPage';
+import { CotizadorPage } from '../pages/comercial/CotizadorPage';
+import { ContratosListPage } from '../pages/comercial/ContratosListPage';
+import { ContratoFormPage } from '../pages/comercial/ContratoFormPage';
+import { CajaRecibosPage } from '../pages/comercial/CajaRecibosPage';
+import { AlertasMoraPage } from '../pages/comercial/AlertasMoraPage';
 import { ProtectedRoute } from './ProtectedRoute';
 import { Layout } from '../components/Layout';
 import { useAuth } from '../context/AuthContext';
@@ -54,6 +59,15 @@ export const AppRouter = () => {
         <Route element={<ProtectedRoute allowedRoles={['Administrador', 'Asesor Comercial', 'Secretaria']} />}>
           <Route path="/inventario" element={<InventarioPage />} />
           <Route path="/inventario/estructuras" element={<EstructurasPage />} />
+        </Route>
+
+        {/* Módulo C - Gestión Comercial y Financiera: Administrador, Asesor Comercial, Secretaria */}
+        <Route element={<ProtectedRoute allowedRoles={['Administrador', 'Asesor Comercial', 'Secretaria']} />}>
+          <Route path="/comercial/cotizador" element={<CotizadorPage />} />
+          <Route path="/comercial/contratos" element={<ContratosListPage />} />
+          <Route path="/comercial/contratos/nuevo" element={<ContratoFormPage />} />
+          <Route path="/comercial/caja" element={<CajaRecibosPage />} />
+          <Route path="/comercial/alertas-mora" element={<AlertasMoraPage />} />
         </Route>
 
         {/* Clientes: Administrador, Asesor Comercial, Secretaria */}
