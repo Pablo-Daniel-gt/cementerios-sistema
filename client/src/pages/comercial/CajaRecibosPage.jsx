@@ -227,6 +227,16 @@ export const CajaRecibosPage = () => {
 const VerReciboModal = ({ recibo, onClose, onPrint }) => {
   if (!recibo) return null;
 
+  const detallesCredito = (recibo.detalles || []).filter((d) => d.concepto === 'CUOTA_AMORTIZACION');
+  const detallesEnganche = (recibo.detalles || []).filter((d) => d.concepto === 'ENGANCHE');
+  const detallesMante = (recibo.detalles || []).filter((d) => d.concepto === 'MANTENIMIENTO_ANUAL');
+
+  const montoCredito = detallesCredito.reduce((sum, d) => sum + parseFloat(d.monto_aplicado || 0), 0);
+  const cuotasCanceladas = detallesCredito.filter((d) => d.plan_cuota).length;
+
+  const montoEnganche = detallesEnganche.reduce((sum, d) => sum + parseFloat(d.monto_aplicado || 0), 0);
+  const montoMante = detallesMante.reduce((sum, d) => sum + parseFloat(d.monto_aplicado || 0), 0);
+
   return (
     <div className="modal show d-block" style={{ backgroundColor: 'rgba(0,0,0,0.5)' }} tabIndex="-1">
       <div className="modal-dialog modal-lg modal-dialog-centered">
@@ -261,30 +271,49 @@ const VerReciboModal = ({ recibo, onClose, onPrint }) => {
               </div>
             </div>
 
-            <h6 className="fw-bold mb-2 text-secondary">Desglose de Aplicaciones Financieras:</h6>
+            <h6 className="fw-bold mb-2 text-secondary">Resumen de Conceptos Aplicados:</h6>
             <div className="table-responsive mb-3">
               <table className="table table-bordered table-sm align-middle mb-0">
                 <thead className="table-secondary">
                   <tr>
                     <th>Concepto</th>
-                    <th>Detalle / Referencia</th>
+                    <th>Resumen / Cuotas Canceladas</th>
                     <th className="text-end">Monto Aplicado (Q)</th>
                   </tr>
                 </thead>
                 <tbody>
-                  {recibo.detalles && recibo.detalles.length > 0 ? (
-                    recibo.detalles.map((d) => (
-                      <tr key={d.id_detalle}>
-                        <td className="fw-bold">{d.concepto}</td>
-                        <td>
-                          {d.plan_cuota ? `Cuota de Crédito` : d.control_mantenimiento ? `Mantenimiento Anual` : 'Pago Directo / Enganche'}
-                        </td>
-                        <td className="text-end fw-bold text-success">
-                          Q{Number(d.monto_aplicado).toLocaleString('es-GT', { minimumFractionDigits: 2 })}
-                        </td>
-                      </tr>
-                    ))
-                  ) : (
+                  {detallesCredito.length > 0 && (
+                    <tr>
+                      <td className="fw-bold">Cuota de Amortización Crédito</td>
+                      <td>
+                        {cuotasCanceladas > 0
+                          ? `${cuotasCanceladas} cuota(s) cancelada(s) con este pago`
+                          : 'Abono parcial a cuota'}
+                      </td>
+                      <td className="text-end fw-bold text-success">
+                        Q{montoCredito.toLocaleString('es-GT', { minimumFractionDigits: 2 })}
+                      </td>
+                    </tr>
+                  )}
+                  {detallesEnganche.length > 0 && (
+                    <tr>
+                      <td className="fw-bold">Enganche Inicial</td>
+                      <td>Enganche Inicial del Contrato</td>
+                      <td className="text-end fw-bold text-success">
+                        Q{montoEnganche.toLocaleString('es-GT', { minimumFractionDigits: 2 })}
+                      </td>
+                    </tr>
+                  )}
+                  {detallesMante.length > 0 && (
+                    <tr>
+                      <td className="fw-bold">Mantenimiento Anual</td>
+                      <td>Mantenimiento Anual Camposanto</td>
+                      <td className="text-end fw-bold text-success">
+                        Q{montoMante.toLocaleString('es-GT', { minimumFractionDigits: 2 })}
+                      </td>
+                    </tr>
+                  )}
+                  {(!recibo.detalles || recibo.detalles.length === 0) && (
                     <tr>
                       <td colSpan="3" className="text-center text-muted py-2">
                         Cobro directo abonado a saldo de contrato.

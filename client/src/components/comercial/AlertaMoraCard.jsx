@@ -24,6 +24,11 @@ export const AlertaMoraCard = ({ alerta, onRegistrarPago }) => {
           <div>
             <h6 className="card-title fw-bold mb-0 text-dark">
               Contrato: {alerta.numero_contrato}
+              {alerta.estado_contrato && (
+                <span className={`badge ms-2 ${alerta.estado_contrato === 'Liquidado' ? 'bg-info text-dark' : 'bg-secondary'}`}>
+                  {alerta.estado_contrato}
+                </span>
+              )}
             </h6>
             <small className="text-muted">{alerta.cliente_nombre}</small>
           </div>

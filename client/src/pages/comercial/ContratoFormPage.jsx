@@ -25,6 +25,10 @@ export const ContratoFormPage = () => {
   const [espaciosSeleccionados, setEspaciosSeleccionados] = useState([]);
   const [estructuraSeleccionada, setEstructuraSeleccionada] = useState('');
 
+  const [pagoEngancheInmediato, setPagoEngancheInmediato] = useState(true);
+  const [metodoPagoEnganche, setMetodoPagoEnganche] = useState('EFECTIVO');
+  const [boletaEnganche, setBoletaEnganche] = useState('');
+
   const [formData, setFormData] = useState({
     numero_contrato: `CNT-${new Date().getFullYear()}-${Math.floor(1000 + Math.random() * 9000)}`,
     cliente: '',
@@ -43,6 +47,21 @@ export const ContratoFormPage = () => {
     cargarCatalogos();
   }, []);
 
+  // Actualizar estado del contrato automáticamente según si se cancela o no el enganche inicial
+  useEffect(() => {
+    if (estadosContrato.length > 0) {
+      const estadoActivo = estadosContrato.find((e) => (e.nombre_estado_contrato || '').toLowerCase() === 'activo');
+      const estadoSolicitado = estadosContrato.find((e) => (e.nombre_estado_contrato || '').toLowerCase() === 'solicitado');
+      const numEnganche = parseFloat(formData.monto_enganche || 0);
+
+      if (numEnganche > 0 && pagoEngancheInmediato && estadoActivo) {
+        setFormData((prev) => ({ ...prev, estado_contrato: estadoActivo.id_estado_contrato }));
+      } else if (estadoSolicitado) {
+        setFormData((prev) => ({ ...prev, estado_contrato: estadoSolicitado.id_estado_contrato }));
+      }
+    }
+  }, [pagoEngancheInmediato, formData.monto_enganche, estadosContrato]);
+
   const cargarCatalogos = async () => {
     try {
       const [resCli, resMod, resEst, resEsp, resEstruc] = await Promise.all([
@@ -55,7 +74,11 @@ export const ContratoFormPage = () => {
 
       setClientes(resCli.data || []);
       setModalidades(resMod.data || []);
-      setEstadosContrato(resEst.data || []);
+      // Regla a: Al hacer/crear un contrato, la opción de dejarlo como "Cancelado" no debe aparecer
+      const estadosValidos = (resEst.data || []).filter(
+        (e) => (e.nombre_estado_contrato || '').toLowerCase() !== 'cancelado'
+      );
+      setEstadosContrato(estadosValidos);
 
       const todosEspacios = resEsp.data || [];
       // 1. Filtrar solo nichos estrictamente disponibles y no asociados a contratos
@@ -69,7 +92,6 @@ export const ContratoFormPage = () => {
       const todasEstructuras = resEstruc.data || [];
       const libresEstructuras = todasEstructuras.filter((est) => {
         if (est.disponible_completa !== undefined) return est.disponible_completa;
-        // Si no viene del backend, validar que todos los nichos de la estructura estén en la lista de libres
         const nichosEstructura = todosEspacios.filter((e) => String(e.estructura) === String(est.id_estructura));
         return (
           nichosEstructura.length > 0 &&
@@ -87,11 +109,19 @@ export const ContratoFormPage = () => {
           plazo_meses: plazoCalculado
         }));
       }
-      if (resEst.data && resEst.data.length > 0) {
-        setFormData((prev) => ({ ...prev, estado_contrato: resEst.data[0].id_estado_contrato }));
+
+      // Regla b: El modo "Solicitado" está seleccionado por defecto si el enganche no ha sido pagado aún
+      const estadoSolicitadoObj = estadosValidos.find(
+        (e) => (e.nombre_estado_contrato || '').toLowerCase() === 'solicitado'
+      );
+      const estadoInicialId = estadoSolicitadoObj
+        ? estadoSolicitadoObj.id_estado_contrato
+        : (estadosValidos[0]?.id_estado_contrato || '');
+
+      if (estadoInicialId) {
+        setFormData((prev) => ({ ...prev, estado_contrato: estadoInicialId }));
       }
 
-      // Si viene un espacioId desde NichoModal, pre-seleccionarlo
       if (statePrev.espacioId) {
         const espId = statePrev.espacioId;
         setEspaciosSeleccionados([espId]);
@@ -129,7 +159,6 @@ export const ContratoFormPage = () => {
     setFormData((prev) => ({ ...prev, [name]: value }));
   };
 
-  // Autocalcular precio al seleccionar/deseleccionar nichos individuales
   const handleEspacioToggle = (id) => {
     let nuevosSeleccionados = [];
     if (espaciosSeleccionados.includes(id)) {
@@ -139,7 +168,6 @@ export const ContratoFormPage = () => {
     }
     setEspaciosSeleccionados(nuevosSeleccionados);
 
-    // Sumar los precios individuales de los nichos seleccionados
     const sumaPrecios = nuevosSeleccionados.reduce((sum, espId) => {
       const esp = espaciosDisponibles.find((e) => String(e.id_espacio) === String(espId));
       return sum + (esp && esp.precio_individual ? parseFloat(esp.precio_individual) : 0);
@@ -150,7 +178,6 @@ export const ContratoFormPage = () => {
     }
   };
 
-  // Autocalcular precio al seleccionar una Estructura Completa
   const handleEstructuraSelect = (e) => {
     const estId = e.target.value;
     setEstructuraSeleccionada(estId);
@@ -184,18 +211,22 @@ export const ContratoFormPage = () => {
 
     setLoading(true);
     try {
+      const numEnganche = parseFloat(formData.monto_enganche || 0);
       const payload = {
         numero_contrato: formData.numero_contrato,
         cliente: parseInt(formData.cliente, 10),
         modalidad: parseInt(formData.modalidad, 10),
         estado_contrato: parseInt(formData.estado_contrato, 10),
         monto_total: parseFloat(formData.monto_total),
-        monto_enganche: parseFloat(formData.monto_enganche),
+        monto_enganche: numEnganche,
         plazo_meses: parseInt(formData.plazo_meses, 10),
         fecha_firma: formData.fecha_firma,
         fecha_inicio_pago: formData.fecha_inicio_pago,
         espacios_ids: tipoVentaInmueble === 'INDIVIDUAL' ? espaciosSeleccionados : [],
-        estructura_id: tipoVentaInmueble === 'ESTRUCTURA' ? parseInt(estructuraSeleccionada, 10) : null
+        estructura_id: tipoVentaInmueble === 'ESTRUCTURA' ? parseInt(estructuraSeleccionada, 10) : null,
+        pago_enganche_inmediato: numEnganche > 0 ? pagoEngancheInmediato : false,
+        metodo_pago_enganche: metodoPagoEnganche,
+        boleta_enganche: boletaEnganche || null
       };
 
       await createContrato(payload);
@@ -282,13 +313,16 @@ export const ContratoFormPage = () => {
                 </div>
 
                 <div className="col-md-6">
-                  <label className="form-label fw-bold">Estado Inicial:</label>
+                  <label className="form-label fw-bold">
+                    Estado Inicial <small className="text-muted fw-normal">(Autocompletado)</small>:
+                  </label>
                   <select
                     name="estado_contrato"
-                    className="form-select"
+                    className="form-select bg-light text-dark fw-bold"
                     value={formData.estado_contrato}
                     onChange={handleChange}
-                    required
+                    disabled={true}
+                    style={{ pointerEvents: 'none', opacity: 0.9 }}
                   >
                     {estadosContrato.map((e) => (
                       <option key={e.id_estado_contrato} value={e.id_estado_contrato}>
@@ -311,7 +345,7 @@ export const ContratoFormPage = () => {
                     onChange={handleChange}
                     required
                   />
-                  <small className="text-muted">Calculado automáticamente al seleccionar inmuebles (editable).</small>
+                  <small className="text-muted">Calculado al seleccionar inmuebles (ajustable).</small>
                 </div>
 
                 <div className="col-md-6">
@@ -320,12 +354,89 @@ export const ContratoFormPage = () => {
                     type="number"
                     step="0.01"
                     name="monto_enganche"
-                    className="form-control fw-bold text-info"
+                    className="form-control fw-bold text-info fs-5 bg-light"
                     value={formData.monto_enganche}
-                    onChange={handleChange}
-                    required
+                    readOnly={true}
+                    disabled={true}
+                    style={{ pointerEvents: 'none', opacity: 0.9 }}
                   />
+                  <small className="text-muted">Seleccione una opción de enganche.</small>
                 </div>
+              </div>
+
+              {/* Bloque de Enganche Ajustado a Grilla Bootstrap 100% Contenida (Reglas 2a, 2b y 2c) */}
+              <div className="p-3 mb-3 bg-light border border-info rounded overflow-hidden">
+                <label className="form-label fw-bold text-dark d-block mb-2">
+                  <i className="bi bi-tag-fill text-info me-1"></i>
+                  Opciones de Enganche Inicial:
+                </label>
+                <div className="row row-cols-2 row-cols-sm-4 g-2 mb-2 w-100 m-0">
+                  {[0, 500, 1000, 5000].map((val) => (
+                    <div className="col p-1" key={val}>
+                      <button
+                        type="button"
+                        className={`btn btn-sm w-100 ${String(formData.monto_enganche) === String(val) ? 'btn-info text-white fw-bold shadow-sm' : 'btn-outline-secondary'}`}
+                        onClick={() => setFormData((prev) => ({ ...prev, monto_enganche: String(val) }))}
+                      >
+                        Q{val.toLocaleString('es-GT')}
+                      </button>
+                    </div>
+                  ))}
+                </div>
+
+                {parseFloat(formData.monto_enganche || 0) > 0 && (
+                  <div className="mt-3 pt-3 border-top">
+                    <div className="form-check form-switch mb-2">
+                      <input
+                        className="form-check-input"
+                        type="checkbox"
+                        id="checkPagoEnganche"
+                        checked={pagoEngancheInmediato}
+                        onChange={(e) => setPagoEngancheInmediato(e.target.checked)}
+                      />
+                      <label className="form-check-label fw-bold text-dark" htmlFor="checkPagoEnganche">
+                        <i className="bi bi-cash-stack text-success me-1"></i>
+                        Registrar cobro de Enganche Inicial en la firma.
+                      </label>
+                    </div>
+                    {!pagoEngancheInmediato && (
+                      <small className="text-warning d-block font-monospace">
+                        <i className="bi bi-clock-history me-1"></i>
+                        El enganche quedará pendiente de cobro en caja y el estado será 'Solicitado'.
+                      </small>
+                    )}
+
+                    {pagoEngancheInmediato && (
+                      <div className="row g-2 mt-2">
+                        <div className="col-md-6">
+                          <label className="form-label small fw-bold mb-1">Método de Pago Enganche:</label>
+                          <select
+                            className="form-select form-select-sm"
+                            value={metodoPagoEnganche}
+                            onChange={(e) => setMetodoPagoEnganche(e.target.value)}
+                          >
+                            <option value="EFECTIVO">Efectivo</option>
+                            <option value="DEPOSITO_BANCO">Depósito Bancario</option>
+                            <option value="TRANSFERENCIA">Transferencia Bancaria</option>
+                            <option value="TARJETA">Tarjeta Débito/Crédito</option>
+                          </select>
+                        </div>
+                        {metodoPagoEnganche !== 'EFECTIVO' && (
+                          <div className="col-md-6">
+                            <label className="form-label small fw-bold mb-1">No. Boleta / Referencia:</label>
+                            <input
+                              type="text"
+                              className="form-control form-control-sm"
+                              placeholder="Ej. Ref #123456"
+                              value={boletaEnganche}
+                              onChange={(e) => setBoletaEnganche(e.target.value)}
+                            />
+                          </div>
+                        )}
+                      </div>
+                    )}
+                  </div>
+                )}
               </div>
 
               <div className="row g-3 mb-3">

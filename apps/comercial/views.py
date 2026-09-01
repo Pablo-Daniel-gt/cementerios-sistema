@@ -96,6 +96,14 @@ class ContratoViewSet(viewsets.ModelViewSet):
         """
         contrato = self.get_object()
 
+        # Cálculos de Enganche pagado en caja
+        pagado_enganche = DetallePagoRecibo.objects.filter(
+            recibo__contrato=contrato,
+            concepto='ENGANCHE'
+        ).aggregate(Sum('monto_aplicado'))['monto_aplicado__sum'] or Decimal('0.00')
+
+        monto_enganche_efectivo = max(Decimal(str(contrato.monto_enganche or 0)), Decimal(str(pagado_enganche)))
+
         # Cálculos de amortización de crédito
         total_credito = contrato.monto_financiar
         pagado_credito = DetallePagoRecibo.objects.filter(
@@ -139,7 +147,9 @@ class ContratoViewSet(viewsets.ModelViewSet):
             'estado': contrato.estado_contrato.nombre_estado_contrato,
             'resumen_financiero': {
                 'monto_total_contrato': float(contrato.monto_total),
-                'monto_enganche': float(contrato.monto_enganche),
+                'monto_enganche': float(monto_enganche_efectivo),
+                'monto_enganche_pactado': float(contrato.monto_enganche),
+                'monto_enganche_pagado': float(pagado_enganche),
                 'monto_financiar': float(contrato.monto_financiar),
                 'monto_pagado_credito': float(pagado_credito),
                 'saldo_credito_pendiente': float(saldo_credito_pendiente),
@@ -342,6 +352,19 @@ class AlertasMoraView(APIView):
     def get(self, request):
         hoy = date.today()
 
+        # 0. Garantizar que todos los contratos (Activos o Liquidados) tengan registro de mantenimiento anual para el año en curso
+        contratos_vigentes = Contrato.objects.exclude(estado_contrato__nombre_estado_contrato='Cancelado')
+        for cnt in contratos_vigentes:
+            ControlMantenimiento.objects.get_or_create(
+                contrato=cnt,
+                anio_periodo=hoy.year,
+                defaults={
+                    'monto_mantenimiento': 500.00,
+                    'fecha_limite_pago': date(hoy.year, 12, 31),
+                    'estado_cobro': 'PENDIENTE'
+                }
+            )
+
         # 1. Actualizar de forma atómica cobros de mantenimiento vencidos a EN_MORA
         ControlMantenimiento.objects.filter(
             estado_cobro='PENDIENTE',
@@ -354,15 +377,15 @@ class AlertasMoraView(APIView):
             fecha_vencimiento__lt=hoy
         ).update(estado_cuota='VENCIDA')
 
-        # 3. Obtener mantenimientos en mora
+        # 3. Obtener mantenimientos en mora (incluyendo contratos liquidados)
         mantenimientos_mora = ControlMantenimiento.objects.filter(
             estado_cobro='EN_MORA'
-        ).select_related('contrato__cliente')
+        ).select_related('contrato__cliente', 'contrato__estado_contrato')
 
         # 4. Obtener cuotas de crédito vencidas
         cuotas_vencidas = PlanPagoCuota.objects.filter(
             estado_cuota='VENCIDA'
-        ).select_related('contrato__cliente')
+        ).select_related('contrato__cliente', 'contrato__estado_contrato')
 
         alertas_preventivas = []
         alertas_operativas = []
@@ -379,6 +402,7 @@ class AlertasMoraView(APIView):
             item = {
                 'contrato_id': contrato.id_contrato,
                 'numero_contrato': contrato.numero_contrato,
+                'estado_contrato': contrato.estado_contrato.nombre_estado_contrato,
                 'cliente_nombre': str(contrato.cliente),
                 'cliente_telefono': contrato.cliente.telefono or "N/A",
                 'cliente_correo': contrato.cliente.correo or "N/A",
@@ -397,7 +421,7 @@ class AlertasMoraView(APIView):
                 item['nivel_riesgo'] = 'EXTRAJUDICIAL'
                 alertas_extrajudiciales.append(item)
 
-        # Evaluar mantenimientos en mora
+        # Evaluar mantenimientos en mora (incluso si el contrato está Liquidado)
         for m in mantenimientos_mora:
             dias = (hoy - m.fecha_limite_pago).days
             clasificar_alerta(

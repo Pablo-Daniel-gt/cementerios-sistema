@@ -121,6 +121,17 @@ export const EstadoCuentaModal = ({ show, contratoId, onClose }) => {
                           <strong className="fs-5 text-info">
                             Q{data.resumen_financiero?.monto_enganche?.toLocaleString('es-GT', { minimumFractionDigits: 2 })}
                           </strong>
+                          {data.resumen_financiero?.monto_enganche_pagado > 0 ? (
+                            <small className="text-success d-block fw-bold mt-1">
+                              <i className="bi bi-check-circle-fill me-1"></i>
+                              Pagado en Caja (Q{data.resumen_financiero?.monto_enganche_pagado?.toLocaleString('es-GT', { minimumFractionDigits: 2 })})
+                            </small>
+                          ) : (
+                            <small className="text-warning d-block fw-bold mt-1">
+                              <i className="bi bi-clock-history me-1"></i>
+                              Pendiente de Pago
+                            </small>
+                          )}
                         </div>
                       </div>
                       <div className="col-md-3">

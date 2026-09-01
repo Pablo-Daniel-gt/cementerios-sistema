@@ -249,3 +249,125 @@ class ComercialBackendTestCase(TestCase):
         }, format='json')
         self.assertEqual(resp_edit.status_code, status.HTTP_200_OK)
         self.assertEqual(contrato.plan_cuotas.filter(estado_cuota='PAGADA').count(), 1)
+
+    def test_regla_a_no_crear_contrato_cancelado(self):
+        """Regla a: No se permite seleccionar/crear un contrato directamente en estado Cancelado."""
+        url = reverse('contrato-list')
+        estado_cancelado, _ = EstadoContrato.objects.get_or_create(nombre_estado_contrato="Cancelado")
+        payload = {
+            "numero_contrato": "CNT-TEST-CANCEL",
+            "cliente": self.cliente.id,
+            "modalidad": self.modalidad_credito24.id_modalidad,
+            "estado_contrato": estado_cancelado.id_estado_contrato,
+            "monto_total": 24000.00,
+            "monto_enganche": 4000.00,
+            "plazo_meses": 24,
+            "fecha_firma": "2026-01-01",
+            "fecha_inicio_pago": "2026-02-01"
+        }
+        resp = self.client.post(url, payload, format='json')
+        self.assertEqual(resp.status_code, status.HTTP_400_BAD_REQUEST)
+        self.assertIn("Cancelado", str(resp.data))
+
+    def test_regla_b_pago_enganche_activa_contrato_y_bloquea_duplicados(self):
+        """Regla b: El pago de enganche pasa el contrato a Activo y bloquea cobros repetidos de enganche."""
+        estado_solicitado, _ = EstadoContrato.objects.get_or_create(nombre_estado_contrato="Solicitado")
+        contrato = Contrato.objects.create(
+            numero_contrato="CNT-ENG-001",
+            cliente=self.cliente,
+            usuario_asesor=self.user,
+            modalidad=self.modalidad_credito24,
+            estado_contrato=estado_solicitado,
+            monto_total=12000.00,
+            monto_enganche=2000.00,
+            monto_financiar=10000.00,
+            plazo_meses=2,
+            fecha_firma=date(2026, 1, 1),
+            fecha_inicio_pago=date(2026, 2, 1)
+        )
+
+        url_recibo = reverse('recibo-pago-list')
+        payload = {
+            "contrato": contrato.id_contrato,
+            "monto_ingresado": 2000.00,
+            "metodo_pago": "EFECTIVO",
+            "detalles": [
+                {
+                    "concepto": "ENGANCHE",
+                    "monto_aplicado": 2000.00
+                }
+            ]
+        }
+        resp = self.client.post(url_recibo, payload, format='json')
+        self.assertEqual(resp.status_code, status.HTTP_201_CREATED)
+
+        # Verificar que el contrato pasó a Activo
+        contrato.refresh_from_db()
+        self.assertEqual(contrato.estado_contrato.nombre_estado_contrato, "Activo")
+
+        # Intentar pagar enganche por segunda vez (debe ser rechazado por la API)
+        resp_dup = self.client.post(url_recibo, payload, format='json')
+        self.assertEqual(resp_dup.status_code, status.HTTP_400_BAD_REQUEST)
+
+    def test_regla_c_auto_liquidacion_y_mantenimiento(self):
+        """Regla c: El contrato se liquida al terminar el pago, pero puede recibir cobros de mantenimiento."""
+        estado_solicitado, _ = EstadoContrato.objects.get_or_create(nombre_estado_contrato="Solicitado")
+        estado_liquidado, _ = EstadoContrato.objects.get_or_create(nombre_estado_contrato="Liquidado")
+
+        contrato = Contrato.objects.create(
+            numero_contrato="CNT-LIQ-001",
+            cliente=self.cliente,
+            usuario_asesor=self.user,
+            modalidad=self.modalidad_contado,
+            estado_contrato=estado_solicitado,
+            monto_total=12000.00,
+            monto_enganche=12000.00,
+            monto_financiar=0.00,
+            plazo_meses=0,
+            fecha_firma=date(2026, 1, 1),
+            fecha_inicio_pago=date(2026, 2, 1)
+        )
+
+        url_recibo = reverse('recibo-pago-list')
+        resp = self.client.post(url_recibo, {
+            "contrato": contrato.id_contrato,
+            "monto_ingresado": 12000.00,
+            "metodo_pago": "EFECTIVO",
+            "detalles": [
+                {"concepto": "ENGANCHE", "monto_aplicado": 12000.00}
+            ]
+        }, format='json')
+        self.assertEqual(resp.status_code, status.HTTP_201_CREATED)
+
+        contrato.refresh_from_db()
+        self.assertEqual(contrato.estado_contrato.nombre_estado_contrato, "Liquidado")
+
+        # Probar cobro de mantenimiento anual en contrato Liquidado
+        mante = ControlMantenimiento.objects.create(
+            contrato=contrato,
+            anio_periodo=2026,
+            monto_mantenimiento=500.00,
+            fecha_limite_pago=date(2026, 12, 31),
+            estado_cobro='PENDIENTE'
+        )
+
+        resp_mante = self.client.post(url_recibo, {
+            "contrato": contrato.id_contrato,
+            "monto_ingresado": 500.00,
+            "metodo_pago": "EFECTIVO",
+            "detalles": [
+                {
+                    "concepto": "MANTENIMIENTO_ANUAL",
+                    "monto_aplicado": 500.00,
+                    "control_mantenimiento": mante.id_control_mante
+                }
+            ]
+        }, format='json')
+        self.assertEqual(resp_mante.status_code, status.HTTP_201_CREATED)
+
+        mante.refresh_from_db()
+        self.assertEqual(mante.estado_cobro, 'PAGADO')
+        # El estado del contrato se mantiene como Liquidado
+        contrato.refresh_from_db()
+        self.assertEqual(contrato.estado_contrato.nombre_estado_contrato, "Liquidado")
+

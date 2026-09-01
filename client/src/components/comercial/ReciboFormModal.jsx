@@ -25,21 +25,35 @@ export const ReciboFormModal = ({ show, contrato, onClose, onSuccess }) => {
     }
   }, [show, contrato]);
 
+  const puedePagarEnganche = contrato && !contrato.enganche_pagado;
+
   const cargarPendientes = async () => {
     try {
       const resCuotas = await getPlanCuotas({ contrato: contrato.id_contrato });
       const cuotasNoPagadas = (resCuotas.data || []).filter((c) => c.estado_cuota !== 'PAGADA');
       setCuotasPendientes(cuotasNoPagadas);
-      if (cuotasNoPagadas.length > 0) {
-        setCuotaIdSeleccionada(cuotasNoPagadas[0].id_plan);
-        setMontoIngresado(cuotasNoPagadas[0].monto_cuota);
-      }
 
       const resMante = await getControlMantenimientos({ contrato: contrato.id_contrato });
       const mantesNoPagados = (resMante.data || []).filter((m) => m.estado_cobro !== 'PAGADO');
       setMantenimientosPendientes(mantesNoPagados);
-      if (mantesNoPagados.length > 0 && conceptoSeleccionado === 'MANTENIMIENTO_ANUAL') {
+
+      const puedeEngancheActual = contrato && !contrato.enganche_pagado;
+
+      // Selección predeterminada inteligente respetando reglas 2b, 6a y 6b
+      if (puedeEngancheActual) {
+        setConceptoSeleccionado('ENGANCHE');
+        setMontoIngresado(contrato.monto_enganche || '0');
+      } else if (cuotasNoPagadas.length > 0 && contrato.estado_nombre !== 'Liquidado') {
+        setConceptoSeleccionado('CUOTA_AMORTIZACION');
+        setCuotaIdSeleccionada(cuotasNoPagadas[0].id_plan);
+        setMontoIngresado(cuotasNoPagadas[0].monto_cuota);
+      } else if (mantesNoPagados.length > 0) {
+        setConceptoSeleccionado('MANTENIMIENTO_ANUAL');
         setManteIdSeleccionado(mantesNoPagados[0].id_control_mante);
+        setMontoIngresado(mantesNoPagados[0].monto_mantenimiento);
+      } else {
+        setConceptoSeleccionado('');
+        setMontoIngresado('');
       }
     } catch (error) {
       console.error('Error al cargar pendientes:', error);
@@ -56,7 +70,7 @@ export const ReciboFormModal = ({ show, contrato, onClose, onSuccess }) => {
     } else if (val === 'MANTENIMIENTO_ANUAL' && mantenimientosPendientes.length > 0) {
       setMontoIngresado(mantenimientosPendientes[0].monto_mantenimiento);
     } else if (val === 'ENGANCHE') {
-      setMontoIngresado(contrato.monto_enganche);
+      setMontoIngresado(contrato.monto_enganche || '0');
     }
   };
 
@@ -80,8 +94,13 @@ export const ReciboFormModal = ({ show, contrato, onClose, onSuccess }) => {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    if (!montoIngresado || parseFloat(montoIngresado) <= 0) {
-      toast.error('Ingrese un monto válido');
+    if (!conceptoSeleccionado) {
+      toast.error('No hay conceptos pendientes disponibles para cobrar en este contrato.');
+      return;
+    }
+    const parsedMonto = parseFloat(montoIngresado);
+    if (isNaN(parsedMonto) || parsedMonto < 0) {
+      toast.error('Ingrese un monto válido (0 o mayor)');
       return;
     }
 
@@ -90,17 +109,18 @@ export const ReciboFormModal = ({ show, contrato, onClose, onSuccess }) => {
       const planCuotaId = (conceptoSeleccionado === 'CUOTA_AMORTIZACION' && cuotaIdSeleccionada) ? parseInt(cuotaIdSeleccionada, 10) : null;
       const controlManteId = (conceptoSeleccionado === 'MANTENIMIENTO_ANUAL' && manteIdSeleccionado) ? parseInt(manteIdSeleccionado, 10) : null;
 
+      const montoAplicar = parsedMonto === 0 ? 0.01 : parsedMonto;
+
       const detalleObj = {
         concepto: conceptoSeleccionado,
-        monto_aplicado: parseFloat(montoIngresado),
+        monto_aplicado: montoAplicar,
         plan_cuota: isNaN(planCuotaId) ? null : planCuotaId,
         control_mantenimiento: isNaN(controlManteId) ? null : controlManteId
       };
 
-
       const payload = {
         contrato: contrato.id_contrato,
-        monto_ingresado: parseFloat(montoIngresado),
+        monto_ingresado: montoAplicar,
         metodo_pago: formData.metodo_pago,
         numero_boleta_banco: formData.numero_boleta_banco || null,
         observaciones: formData.observaciones || null,
@@ -118,6 +138,8 @@ export const ReciboFormModal = ({ show, contrato, onClose, onSuccess }) => {
     }
   };
 
+  const sinPendientes = !puedePagarEnganche && cuotasPendientes.length === 0 && mantenimientosPendientes.length === 0;
+
   return (
     <div className="modal show d-block" style={{ backgroundColor: 'rgba(0,0,0,0.5)' }} tabIndex="-1">
       <div className="modal-dialog">
@@ -133,21 +155,34 @@ export const ReciboFormModal = ({ show, contrato, onClose, onSuccess }) => {
             <div className="modal-body">
               <div className="alert alert-light border mb-3">
                 <small className="text-muted d-block">Contrato Maestro:</small>
-                <strong>{contrato.numero_contrato} - {contrato.cliente_nombre}</strong>
+                <strong>{contrato.numero_contrato} - {contrato.cliente_nombre} ({contrato.estado_nombre})</strong>
               </div>
 
               <div className="mb-3">
                 <label className="form-label fw-bold">Concepto de Cobro:</label>
-                <select
-                  className="form-select"
-                  value={conceptoSeleccionado}
-                  onChange={handleConceptoChange}
-                >
-                  <option value="CUOTA_AMORTIZACION">Cuota de Amortización Crédito</option>
-                  <option value="MANTENIMIENTO_ANUAL">Mantenimiento Anual Camposanto</option>
-                  <option value="ENGANCHE">Enganche Inicial</option>
-                  <option value="OTRO">Otro Concepto</option>
-                </select>
+                {sinPendientes ? (
+                  <div className="alert alert-success py-2 small mb-0">
+                    <i className="bi bi-check-circle-fill me-1"></i>
+                    Este contrato no tiene pagos ni cuotas pendientes (Mantenimiento Anual y Crédito al día).
+                  </div>
+                ) : (
+                  <select
+                    className="form-select"
+                    value={conceptoSeleccionado}
+                    onChange={handleConceptoChange}
+                    required
+                  >
+                    {puedePagarEnganche && (
+                      <option value="ENGANCHE">Enganche Inicial</option>
+                    )}
+                    {contrato.estado_nombre !== 'Liquidado' && cuotasPendientes.length > 0 && (
+                      <option value="CUOTA_AMORTIZACION">Cuota de Amortización Crédito</option>
+                    )}
+                    {mantenimientosPendientes.length > 0 && (
+                      <option value="MANTENIMIENTO_ANUAL">Mantenimiento Anual Camposanto</option>
+                    )}
+                  </select>
+                )}
               </div>
 
               {conceptoSeleccionado === 'CUOTA_AMORTIZACION' && (
@@ -196,6 +231,23 @@ export const ReciboFormModal = ({ show, contrato, onClose, onSuccess }) => {
                   onChange={(e) => setMontoIngresado(e.target.value)}
                   required
                 />
+                {conceptoSeleccionado === 'ENGANCHE' && (
+                  <div className="mt-2">
+                    <small className="text-muted d-block mb-1">Opciones rápidas de Enganche:</small>
+                    <div className="btn-group btn-group-sm w-100" role="group">
+                      {[0, 500, 1000, 5000].map((val) => (
+                        <button
+                          key={val}
+                          type="button"
+                          className={`btn ${String(montoIngresado) === String(val) ? 'btn-success fw-bold' : 'btn-outline-secondary'}`}
+                          onClick={() => setMontoIngresado(String(val))}
+                        >
+                          Q{val}
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+                )}
               </div>
 
               <div className="mb-3">
