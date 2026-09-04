@@ -318,7 +318,7 @@ export const ContratoFormPage = () => {
                   </label>
                   <select
                     name="estado_contrato"
-                    className="form-select bg-light text-dark fw-bold"
+                    className="form-control bg-light text-dark fw-bold"
                     value={formData.estado_contrato}
                     onChange={handleChange}
                     disabled={true}

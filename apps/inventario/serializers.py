@@ -10,6 +10,9 @@ from rest_framework import serializers
 from .models import Sector, TipoEstructura, EstadoEspacio, EstructuraFisica, EspacioFisico
 
 
+from decimal import Decimal
+
+
 # ==============================================================================
 # 1. SERIALIZADOR DE SECTOR
 # ==============================================================================
@@ -88,6 +91,22 @@ class EspacioFisicoSerializer(serializers.ModelSerializer):
         return super().to_internal_value(data)
 
     def validate(self, attrs):
+        if self.instance:
+            # Regla 1a: Bloqueo de cambio manual de estado si el nicho se encuentra Ocupado
+            nuevo_estado = attrs.get('estado')
+            if nuevo_estado and self.instance.estado and self.instance.estado.nombre_estado == 'Ocupado' and nuevo_estado != self.instance.estado:
+                raise serializers.ValidationError({
+                    'estado': "No se puede modificar manualmente el estado de un nicho 'Ocupado'. El cambio de estado debe realizarse a través del proceso de Exhumación o Traslado en el Módulo de Inhumaciones."
+                })
+
+            # Regla 1b: Bloqueo de modificación de precio si el nicho se encuentra asignado a un contrato comercial
+            nuevo_precio = attrs.get('precio_individual')
+            if nuevo_precio is not None and hasattr(self.instance, 'detalle_contrato') and self.instance.detalle_contrato is not None:
+                if Decimal(str(nuevo_precio)) != Decimal(str(self.instance.precio_individual or 0)):
+                    raise serializers.ValidationError({
+                        'precio_individual': "El precio individual de este nicho no se puede modificar porque se encuentra asignado a un contrato comercial."
+                    })
+
         estructura = attrs.get('estructura') or (self.instance.estructura if self.instance else None)
         posicion_fila = attrs.get('posicion_fila') if 'posicion_fila' in attrs else (self.instance.posicion_fila if self.instance else None)
         posicion_columna = attrs.get('posicion_columna') if 'posicion_columna' in attrs else (self.instance.posicion_columna if self.instance else None)

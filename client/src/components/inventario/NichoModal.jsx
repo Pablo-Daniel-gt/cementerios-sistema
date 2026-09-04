@@ -203,7 +203,13 @@ export function NichoModal({ espacio, estados = [], onClose, onUpdate }) {
                       value={precioIndividual}
                       onChange={(e) => setPrecioIndividual(e.target.value)}
                       placeholder="Ej. 15000.00"
+                      disabled={espacio.en_contrato}
                     />
+                    {espacio.en_contrato && (
+                      <small className="text-danger d-block mt-1 fw-semibold">
+                        <i className="bi bi-lock-fill me-1"></i> El precio está bloqueado porque el nicho ya se encuentra bajo contrato comercial.
+                      </small>
+                    )}
                   </div>
                   <div className="col-md-6">
                     <label className="form-label fw-bold">Material de Construcción:</label>
@@ -239,38 +245,47 @@ export function NichoModal({ espacio, estados = [], onClose, onUpdate }) {
               </form>
             )}
 
-            {!isDisponible && (
+            {espacio.estado === 'Ocupado' ? (
+              <div className="alert alert-danger border-0 shadow-sm d-flex align-items-center gap-2 py-3 mb-3">
+                <i className="bi bi-lock-fill fs-4 text-danger"></i>
+                <div className="small">
+                  <strong>Estado Ocupado Bloqueado:</strong> Este nicho contiene una inhumación activa. Su estado se encuentra bloqueado y sólo puede actualizarse al procesar una <em>Exhumación</em> o <em>Traslado</em> en el <strong>Módulo de Inhumaciones</strong>.
+                </div>
+              </div>
+            ) : !isDisponible ? (
               <div className="alert alert-warning d-flex align-items-center gap-2 py-2 mb-3" style={{ fontSize: '0.85rem' }}>
                 <i className="bi bi-exclamation-triangle-fill fs-5 text-warning"></i>
                 <div>
                   <strong>Espacio no disponible para venta directa.</strong> Este nicho se encuentra en estado <em>{espacio.estado}</em>.
                 </div>
               </div>
-            )}
+            ) : null}
 
-            {/* Formulario de Cambio Rápido de Estado */}
-            <form onSubmit={handleGuardarEstado} className="border-top pt-3">
-              <h6 className="fw-bold text-secondary mb-2" style={{ fontSize: '0.9rem' }}>
-                <i className="bi bi-gear-fill me-1"></i> Cambiar Estado Operacional
-              </h6>
-              <div className="input-group">
-                <select
-                  className="form-select"
-                  value={nuevoEstadoId}
-                  onChange={(e) => setNuevoEstadoId(e.target.value)}
-                >
-                  <option value="" disabled hidden>Seleccionar Nuevo Estado</option>
-                  {estados.map((est) => (
-                    <option key={est.id_estado} value={est.id_estado}>
-                      {est.nombre_estado}
-                    </option>
-                  ))}
-                </select>
-                <button type="submit" className="btn btn-primary px-3" disabled={loadingEstado || !nuevoEstadoId}>
-                  {loadingEstado ? 'Guardando...' : 'Actualizar Estado'}
-                </button>
-              </div>
-            </form>
+            {/* Formulario de Cambio Rápido de Estado (Bloqueado si está Ocupado) */}
+            {espacio.estado !== 'Ocupado' && (
+              <form onSubmit={handleGuardarEstado} className="border-top pt-3">
+                <h6 className="fw-bold text-secondary mb-2" style={{ fontSize: '0.9rem' }}>
+                  <i className="bi bi-gear-fill me-1"></i> Cambiar Estado Operacional
+                </h6>
+                <div className="input-group">
+                  <select
+                    className="form-select"
+                    value={nuevoEstadoId}
+                    onChange={(e) => setNuevoEstadoId(e.target.value)}
+                  >
+                    <option value="" disabled hidden>Seleccionar Nuevo Estado</option>
+                    {estados.map((est) => (
+                      <option key={est.id_estado} value={est.id_estado}>
+                        {est.nombre_estado}
+                      </option>
+                    ))}
+                  </select>
+                  <button type="submit" className="btn btn-primary px-3" disabled={loadingEstado || !nuevoEstadoId}>
+                    {loadingEstado ? 'Guardando...' : 'Actualizar Estado'}
+                  </button>
+                </div>
+              </form>
+            )}
           </div>
 
           {/* Pie del Modal */}

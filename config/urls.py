@@ -21,5 +21,15 @@ urlpatterns = [
 
     # Módulo C: API REST Comercial y Financiera (Contratos, Cotizaciones, Caja y Alertas de Mora)
     path('api/v1/comercial/', include('apps.comercial.urls')),
+
+    # Módulo D: API REST de Inhumaciones y Exhumaciones (Difuntos, Sepelios, PDFs RENAP/MSPAS)
+    path('api/v1/inhumaciones/', include('apps.inhumaciones.urls')),
 ]
+
+from django.conf import settings
+from django.conf.urls.static import static
+
+if settings.DEBUG:
+    urlpatterns += static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)
+
 

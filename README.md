@@ -25,23 +25,37 @@ El **Sistema Web para la Administración Comercial, Control de Inhumaciones y Re
 
 ---
 
-## 📌 Estado del Proyecto: Módulo A (Estable)
+## 📌 Estado del Proyecto: Módulos Backend (Estables y Operativos)
 
-Actualmente, el proyecto cuenta con el **Módulo A (Autenticación, Usuarios y Clientes - `apps.cuentas`)** totalmente funcional y estabilizado, sentando las bases del sistema:
+El backend del sistema cuenta con una arquitectura relacional sólida y probada en PostgreSQL a través de sus cuatro módulos principales:
 
-- **Autenticación y Seguridad por Roles (RNF-08):** Control de acceso estricto diferenciando perfiles (Administrador, Asesor Comercial y Cliente Propietario).
-- **Portal de Autogestión de Clientes (RF-03):** Interfaz para que los titulares/propietarios inicien sesión y consulten su información asociada según su DPI/CUI.
-- **Bitácora de Auditoría y Trazabilidad (RNF-08):** Registro transparente de actividades y cambios realizados en la plataforma.
-- **Interfaz UI/UX Empática (RNF-01):** Diseño sobrio, limpio y accesible adaptado al contexto administrativo y de atención a usuarios.
+### 🔐 Módulo A: Autenticación, Usuarios y Clientes (`apps.cuentas`)
+- **Seguridad por Roles (RNF-08):** Control de acceso por perfiles (Administrador, Asesor Comercial, Cliente Propietario).
+- **Portal de Clientes (RF-03):** Gestión de titulares por CUI/DPI.
+- **Bitácora de Auditoría y Trazabilidad (RNF-08):** Registro detallado de operaciones de sistema en formato JSON.
+
+### 🏛️ Módulo B: Inventario de Inmuebles y Camposanto (`apps.inventario`)
+- **Jerarquía Física Fija:** `Sector` $\rightarrow$ `EstructuraFisica` $\rightarrow$ `EspacioFisico`.
+- **Matriz Visual e Interactiva 2D (RF-02):** Coordenadas `(fila, columna)` y colores de disponibilidad (`Disponible`, `Reservado`, `Ocupado`, `Mantenimiento`).
+- **Generación Masiva de Nichos:** Acciones administrativas para poblar grillas 2D por estructura.
+
+### 💰 Módulo C: Gestión Comercial y Financiera (`apps.comercial`)
+- **Cotizador Financiero y Contratos (RF-01):** Modalidades Contado/Crédito y generación de tablas de amortización en Quetzales.
+- **Caja y Recibos con Desglose Contable:** Registro de cobros con aplicación en cascada a cuotas y cobros de mantenimiento anual.
+- **Alertas de Cobranza y Mora (RF-06):** Clasificación de morosidad (Preventivo, Operativo, Extrajudicial).
+
+### ⚰️ Módulo D: Registro Operativo de Inhumaciones y Exhumaciones (`apps.inhumaciones`)
+- **Requisitos Legales y Anexos (RF-04):** Formulario de sepelio con carga multipart de Actas RENAP y Certificados MSPAS en PDF.
+- **Validación Comercial de Solvencia (RF-05):** Verificación de contratos activos/liquidados y bloqueo ante saldos en mora.
+- **Capacidad Atómica y Exhumación (RNF-02):** Restricción de máx 1 inhumación activa por nicho con actualización atómica a 'Ocupado', y liberación automática a 'Disponible' al procesar una exhumación.
 
 ---
 
-## 📋 Requisitos
+## 📋 Pruebas Unitarias y Cobertura
 
-*Sección en construcción.*
+El backend cuenta con una suite automatizada de pruebas unitarias e integración ejecutadas mediante Django Test Framework:
+```bash
+python manage.py test
+```
+- **Total de pruebas:** 28 tests pasados exitosamente (`OK`).
 
----
-
-## ⚙️ Instalación
-
-*Sección en construcción.*

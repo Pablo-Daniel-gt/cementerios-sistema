@@ -56,6 +56,7 @@ INSTALLED_APPS = [
     'apps.cuentas',     # Módulo A: Autenticación, Usuarios, Clientes y Auditoría
     'apps.inventario',  # Módulo B: Inventario de Inmuebles y Camposanto
     'apps.comercial',   # Módulo C: Gestión Comercial y Financiera
+    'apps.inhumaciones',# Módulo D: Registro Operativo de Inhumaciones y Exhumaciones
 ]
 
 # Configuración del Modelo de Usuario Personalizado
@@ -145,6 +146,10 @@ USE_TZ = True
 # https://docs.djangoproject.com/en/5.2/howto/static-files/
 
 STATIC_URL = 'static/'
+
+# Media files (Archivos subidos por usuarios: PDFs, Actas, Certificados)
+MEDIA_URL = '/media/'
+MEDIA_ROOT = BASE_DIR / 'media'
 
 # Default primary key field type
 # https://docs.djangoproject.com/en/5.2/ref/settings/#default-auto-field

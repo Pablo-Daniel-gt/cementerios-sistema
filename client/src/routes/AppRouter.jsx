@@ -16,6 +16,8 @@ import { ContratosListPage } from '../pages/comercial/ContratosListPage';
 import { ContratoFormPage } from '../pages/comercial/ContratoFormPage';
 import { CajaRecibosPage } from '../pages/comercial/CajaRecibosPage';
 import { AlertasMoraPage } from '../pages/comercial/AlertasMoraPage';
+import { DifuntosListPage } from '../pages/inhumaciones/DifuntosListPage';
+import { InhumacionesListPage } from '../pages/inhumaciones/InhumacionesListPage';
 import { ProtectedRoute } from './ProtectedRoute';
 import { Layout } from '../components/Layout';
 import { useAuth } from '../context/AuthContext';
@@ -68,6 +70,12 @@ export const AppRouter = () => {
           <Route path="/comercial/contratos/nuevo" element={<ContratoFormPage />} />
           <Route path="/comercial/caja" element={<CajaRecibosPage />} />
           <Route path="/comercial/alertas-mora" element={<AlertasMoraPage />} />
+        </Route>
+
+        {/* Módulo D - Registro Operativo de Inhumaciones y Exhumaciones: Administrador, Asesor Comercial, Secretaria */}
+        <Route element={<ProtectedRoute allowedRoles={['Administrador', 'Asesor Comercial', 'Secretaria']} />}>
+          <Route path="/inhumaciones/difuntos" element={<DifuntosListPage />} />
+          <Route path="/inhumaciones/registros" element={<InhumacionesListPage />} />
         </Route>
 
         {/* Clientes: Administrador, Asesor Comercial, Secretaria */}
