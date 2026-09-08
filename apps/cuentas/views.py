@@ -18,7 +18,12 @@ operaciones Estándar CRUD (Create, Read, Update, Delete) sobre un modelo de dat
 6. `destroy()` -> DELETE /api/v1/cuentas/<recurso>/{id}/ (Eliminar un registro)
 """
 
-from rest_framework import viewsets
+from rest_framework import viewsets, permissions, status
+from rest_framework.views import APIView
+from rest_framework.response import Response
+from rest_framework.throttling import AnonRateThrottle
+from rest_framework.authtoken.models import Token
+from django.contrib.auth import authenticate
 from .models import Rol, Usuario, Cliente, Bitacora
 from .serializers import (
     RolSerializer,
@@ -34,15 +39,10 @@ from .serializers import (
 class RolViewSet(viewsets.ModelViewSet):
     """
     ViewSet para gestionar las operaciones CRUD de la entidad Rol.
-    
-    Permite a los clientes de la API listar, consultar por ID, crear, actualizar
-    y eliminar roles dentro del sistema de gestión.
     """
-    # Consulta base para obtener todos los roles ordenados alfabéticamente por su nombre
     queryset = Rol.objects.all().order_by('nombre')
-    
-    # Asignación del serializador que transformará el modelo en JSON y viceversa
     serializer_class = RolSerializer
+    permission_classes = [permissions.IsAuthenticated]
 
 
 # ==============================================================================
@@ -51,15 +51,10 @@ class RolViewSet(viewsets.ModelViewSet):
 class UsuarioViewSet(viewsets.ModelViewSet):
     """
     ViewSet para gestionar las operaciones CRUD del modelo personalizado Usuario.
-
-    Proporciona endpoints para crear usuarios, asignar roles, actualizar información
-    de contacto y gestionar el estado activo/inactivo del usuario.
     """
-    # Consulta base para obtener todos los usuarios, optimizando el acceso al rol relacionado
     queryset = Usuario.objects.all().select_related('rol').order_by('id')
-    
-    # Serializador responsable de manejar la contraseña de forma segura (write_only)
     serializer_class = UsuarioSerializer
+    permission_classes = [permissions.IsAuthenticated]
 
 
 # ==============================================================================
@@ -68,15 +63,10 @@ class UsuarioViewSet(viewsets.ModelViewSet):
 class ClienteViewSet(viewsets.ModelViewSet):
     """
     ViewSet para gestionar las operaciones CRUD de los Clientes / Titulares del cementerio.
-
-    Permite el registro de nuevos clientes, actualización de CUI, nombres, teléfono,
-    dirección y vinculación opcional con un usuario de sistema.
     """
-    # Consulta base para obtener todos los clientes
     queryset = Cliente.objects.all().select_related('usuario').order_by('id')
-    
-    # Serializador de datos para la entidad Cliente
     serializer_class = ClienteSerializer
+    permission_classes = [permissions.IsAuthenticated]
 
 
 # ==============================================================================
@@ -85,28 +75,15 @@ class ClienteViewSet(viewsets.ModelViewSet):
 class BitacoraViewSet(viewsets.ModelViewSet):
     """
     ViewSet para consultar e interactuar con los registros de la Bitácora de Auditoría.
-
-    Nota de diseño:
-    Generalmente las bitácoras se consultan para auditar cambios. Este ViewSet expone
-    la colección completa ordenada cronológicamente por la fecha más reciente.
     """
-    # Consulta base ordenada de forma descendente por fecha y hora para mostrar auditoría reciente primero
     queryset = Bitacora.objects.all().select_related('usuario').order_by('-fecha_hora')
-    
-    # Serializador de datos para auditoría
     serializer_class = BitacoraSerializer
+    permission_classes = [permissions.IsAuthenticated]
 
 
 # ==============================================================================
-# 5. VISTAS DE AUTENTICACIÓN (LOGIN Y PERFIL)
+# 5. VISTAS DE AUTENTICACIÓN (LOGIN, PERFIL Y MI CLIENTE)
 # ==============================================================================
-from rest_framework.views import APIView
-from rest_framework.response import Response
-from rest_framework import status
-from rest_framework.authtoken.models import Token
-from django.contrib.auth import authenticate
-
-
 class LoginView(APIView):
     """
     Endpoint para autenticación de usuarios.
@@ -115,6 +92,7 @@ class LoginView(APIView):
     """
     authentication_classes = []
     permission_classes = []
+    throttle_classes = [AnonRateThrottle]
 
     def post(self, request):
         username = request.data.get('username')
@@ -169,6 +147,8 @@ class PerfilView(APIView):
     Endpoint para obtener perfil de usuario autenticado.
     GET /api/v1/cuentas/me/
     """
+    permission_classes = [permissions.IsAuthenticated]
+
     def get(self, request):
         user = request.user
         if not user or user.is_anonymous:
@@ -190,4 +170,34 @@ class PerfilView(APIView):
                 'is_staff': user.is_staff
             }
         })
+
+
+class MiClienteView(APIView):
+    """
+    Endpoint para obtener el perfil de Cliente del usuario autenticado (RF-03).
+    GET /api/v1/cuentas/me/cliente/
+    Retorna única y exclusivamente los datos del cliente asociado al usuario en sesión.
+    """
+    permission_classes = [permissions.IsAuthenticated]
+
+    def get(self, request):
+        user = request.user
+        if not user or user.is_anonymous:
+            return Response({'error': 'No autenticado'}, status=status.HTTP_401_UNAUTHORIZED)
+
+        cliente = None
+        if hasattr(user, 'cliente_perfil') and user.cliente_perfil:
+            cliente = user.cliente_perfil
+        elif user.email:
+            cliente = Cliente.objects.filter(correo__iexact=user.email).first()
+
+        if not cliente:
+            return Response(
+                {'error': 'No se encontró un perfil de cliente titular asociado a este usuario.'},
+                status=status.HTTP_404_NOT_FOUND
+            )
+
+        serializer = ClienteSerializer(cliente)
+        return Response(serializer.data, status=status.HTTP_200_OK)
+
 

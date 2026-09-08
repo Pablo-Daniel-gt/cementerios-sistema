@@ -38,7 +38,7 @@ export const Sidebar = () => {
               Sistema Web
             </h6>
             <div className="badge bg-white bg-opacity-10 text-light fw-normal px-2 py-0.5" style={{ fontSize: '0.65rem' }}>
-              CAMPOSANTO COMERCIAL
+              CAMPOSANTO
             </div>
           </div>
         )}
@@ -64,7 +64,7 @@ export const Sidebar = () => {
               title="Panel de Control General"
             >
               <i className="bi bi-speedometer2"></i>
-              <span className="links_name">Panel de Control</span>
+              <span className="links_name">Panel General</span>
             </NavLink>
 
             {/* Módulo B: Inventario de Inmuebles y Camposanto */}

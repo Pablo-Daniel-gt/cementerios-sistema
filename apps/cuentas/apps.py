@@ -16,3 +16,7 @@ class CuentasConfig(AppConfig):
     default_auto_field = 'django.db.models.BigAutoField'
     name = 'apps.cuentas'
     verbose_name = 'Módulo de Cuentas y Auditoría'
+
+    def ready(self):
+        import apps.cuentas.signals  # noqa: F401
+

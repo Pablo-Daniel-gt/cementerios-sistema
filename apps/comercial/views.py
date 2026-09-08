@@ -83,6 +83,14 @@ class ContratoViewSet(viewsets.ModelViewSet):
     ).order_by('-id_contrato')
     serializer_class = ContratoSerializer
 
+    def get_queryset(self):
+        qs = super().get_queryset()
+        cliente_id = self.request.query_params.get('cliente')
+        if cliente_id:
+            qs = qs.filter(cliente_id=cliente_id)
+        return qs
+
+
     @extend_schema(
         summary="Consulta Consolidada de Estado de Cuenta del Contrato",
         description="Retorna el resumen financiero acumulado, saldo pendiente de crédito, amortizaciones y cuotas anuales de mantenimiento.",
@@ -266,8 +274,6 @@ class CotizadorView(APIView):
         responses={200: OpenApiResponse(description="Tabla de amortización proyectada o PDF descargable")}
     )
     def post(self, request):
-        serializer = CotizacionSimuladorSerializer(data=request.data)
-
         serializer = CotizacionSimuladorSerializer(data=request.data)
         if not serializer.is_valid():
             return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)

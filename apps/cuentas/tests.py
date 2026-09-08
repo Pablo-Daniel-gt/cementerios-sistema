@@ -35,6 +35,9 @@ class CuentasAPITestCase(TestCase):
             telefono="12345678"
         )
 
+        # Autenticar cliente DRF para pruebas protegidas
+        self.client.force_authenticate(user=self.usuario_test)
+
         # Cliente de prueba
         self.cliente_test = Cliente.objects.create(
             cui="1234567890101",
@@ -45,18 +48,8 @@ class CuentasAPITestCase(TestCase):
             usuario=self.usuario_test
         )
 
-        # Bitácora de prueba
-        self.bitacora_test = Bitacora.objects.create(
-            usuario=self.usuario_test,
-            tabla_afectada="cliente",
-            accion="INSERT",
-            registro_id=self.cliente_test.id,
-            datos_nuevos={"cui": "1234567890101", "nombres": "Juan"}
-        )
-
     def test_rol_list_create(self):
         """Prueba listar y crear roles vía API REST."""
-        # Listar
         url = reverse('rol-list')
         response = self.client.get(url)
         self.assertEqual(response.status_code, status.HTTP_200_OK)
@@ -118,5 +111,38 @@ class CuentasAPITestCase(TestCase):
         url = reverse('bitacora-list')
         response = self.client.get(url)
         self.assertEqual(response.status_code, status.HTTP_200_OK)
-        self.assertEqual(len(response.data), 1)
-        self.assertEqual(response.data[0]['tabla_afectada'], 'cliente')
+        self.assertGreaterEqual(len(response.data), 1)
+
+    def test_mi_cliente_endpoint(self):
+        """Prueba endpoint dedicado /me/cliente/ para el portal de autogestión (RF-03)."""
+        url = reverse('mi-cliente')
+        response = self.client.get(url)
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertEqual(response.data['cui'], self.cliente_test.cui)
+        self.assertEqual(response.data['nombres'], self.cliente_test.nombres)
+
+    def test_unauthenticated_request_denied(self):
+        """Prueba que peticiones anónimas a endpoints privados retornen 401 Unauthorized (SEC-05)."""
+        anon_client = APIClient()
+        url = reverse('cliente-list')
+        response = anon_client.get(url)
+        self.assertEqual(response.status_code, status.HTTP_401_UNAUTHORIZED)
+
+    def test_signals_bitacora_automatica(self):
+        """Prueba que la creación de entidades dispare señales automáticas de auditoría (RNF-08)."""
+        conteo_inicial = Bitacora.objects.count()
+        
+        # Crear nuevo cliente para disparar signal
+        Cliente.objects.create(
+            cui="5555555550101",
+            nombres="Auditoría",
+            apellidos="Test",
+            correo="auditoria@test.com"
+        )
+        
+        conteo_final = Bitacora.objects.count()
+        self.assertGreater(conteo_final, conteo_inicial)
+        
+        ultima_bitacora = Bitacora.objects.latest('id')
+        self.assertEqual(ultima_bitacora.tabla_afectada, 'Cliente')
+        self.assertEqual(ultima_bitacora.accion, 'INSERT')

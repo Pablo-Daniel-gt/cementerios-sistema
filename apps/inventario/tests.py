@@ -13,6 +13,7 @@ from rest_framework.test import APIClient
 from rest_framework import status
 
 from .models import Sector, TipoEstructura, EstadoEspacio, EstructuraFisica, EspacioFisico
+from apps.cuentas.models import Usuario
 
 
 class InventarioModelTestCase(TestCase):
@@ -91,6 +92,12 @@ class InventarioAPITestCase(TestCase):
 
     def setUp(self):
         self.client = APIClient()
+        self.user = Usuario.objects.create_user(
+            username="test_inventario_user",
+            email="inv@test.com",
+            password="Password123!"
+        )
+        self.client.force_authenticate(user=self.user)
         self.sector = Sector.objects.create(
             nombre_sector="Sector A - Jardines",
             nomenclatura="SEC-A"

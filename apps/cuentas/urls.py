@@ -25,7 +25,8 @@ from .views import (
     ClienteViewSet,
     BitacoraViewSet,
     LoginView,
-    PerfilView
+    PerfilView,
+    MiClienteView
 )
 
 # Instanciamos el router predeterminado de DRF
@@ -48,6 +49,7 @@ router.register(r'bitacora', BitacoraViewSet, basename='bitacora')
 urlpatterns = [
     path('login/', LoginView.as_view(), name='login'),
     path('me/', PerfilView.as_view(), name='perfil'),
+    path('me/cliente/', MiClienteView.as_view(), name='mi-cliente'),
     # Incluye automáticamente todas las rutas generadas por el DefaultRouter
     path('', include(router.urls)),
     # Ruta base para el esquema de documentación de la API (OpenAPI/Swagger)

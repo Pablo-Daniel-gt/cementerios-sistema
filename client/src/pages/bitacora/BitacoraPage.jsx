@@ -99,7 +99,6 @@ export const BitacoraPage = () => {
                     <th>Usuario Ejecutor</th>
                     <th>Tabla Afectada</th>
                     <th>Acción</th>
-                    <th>ID Registro</th>
                     <th className="text-center">Detalle Snapshot</th>
                   </tr>
                 </thead>
@@ -115,7 +114,6 @@ export const BitacoraPage = () => {
                       </td>
                       <td className="font-monospace text-primary">{item.tabla_afectada}</td>
                       <td>{getActionBadge(item.accion)}</td>
-                      <td className="fw-semibold">#{item.registro_id || 'N/A'}</td>
                       <td className="text-center">
                         <button
                           onClick={() => setSelectedRecord(item)}

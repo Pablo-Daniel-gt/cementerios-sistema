@@ -11,6 +11,11 @@ export const obtenerPerfilApi = () => {
   return axios.get('cuentas/me/');
 };
 
+export const obtenerMiCliente = () => {
+  return axios.get('cuentas/me/cliente/');
+};
+
+
 // ==============================================================================
 // 2. SERVICIOS DE ROLES
 // ==============================================================================
