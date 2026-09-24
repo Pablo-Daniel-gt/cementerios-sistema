@@ -312,7 +312,6 @@ export function EstructurasPage() {
               <table className="table table-hover table-striped align-middle mb-0">
                 <thead className="table-dark">
                   <tr>
-                    <th>ID</th>
                     <th>Nomenclatura</th>
                     <th>Nombre del Sector</th>
                     <th>Descripción</th>
@@ -329,7 +328,6 @@ export function EstructurasPage() {
                   ) : (
                     sectores.map((sec) => (
                       <tr key={sec.id_sector}>
-                        <td className="fw-bold">{sec.id_sector}</td>
                         <td>
                           <span className="badge bg-secondary px-2 py-1 fs-6">{sec.nomenclatura}</span>
                         </td>
@@ -379,10 +377,9 @@ export function EstructurasPage() {
               <table className="table table-hover table-striped align-middle mb-0">
                 <thead className="table-dark">
                   <tr>
-                    <th>ID</th>
-                    <th>Nombre del Tipo</th>
+                    <th>Tipo</th>
                     <th>Descripción</th>
-                    <th className="text-end">Acciones</th>
+                    <th className="text-center">Acciones</th>
                   </tr>
                 </thead>
                 <tbody>
@@ -395,7 +392,6 @@ export function EstructurasPage() {
                   ) : (
                     tipos.map((t) => (
                       <tr key={t.id_tipo_estructura}>
-                        <td className="fw-bold">{t.id_tipo_estructura}</td>
                         <td>
                           <span className="badge bg-info text-white fs-6 px-3 py-1">{t.nombre_tipo}</span>
                         </td>
@@ -411,7 +407,7 @@ export function EstructurasPage() {
                             className="btn btn-sm btn-outline-danger"
                             onClick={() => handleDeleteTipo(t.id_tipo_estructura, t.nombre_tipo)}
                           >
-                            <i className="bi bi-trash-fill"></i>
+                            <i className="bi bi-trash-fill"></i> Eliminar
                           </button>
                         </td>
                       </tr>

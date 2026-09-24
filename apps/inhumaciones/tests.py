@@ -275,3 +275,28 @@ class InhumacionesBackendTestCase(TestCase):
         # 4. Comprobar que el espacio pasó a estar 'Reservado'
         self.espacio1.refresh_from_db()
         self.assertEqual(self.espacio1.estado.nombre_estado, "Reservado")
+
+    def test_consulta_publica_memorial_allow_any(self):
+        """Prueba que el endpoint público de búsqueda memorial sea accesible sin autenticación y devuelva datos no sensibles."""
+        # 1. Crear inhumación de prueba
+        RegistroInhumacion.objects.create(
+            difunto=self.difunto,
+            espacio=self.espacio1,
+            contrato=self.contrato_activo,
+            usuario_registro=self.user,
+            fecha_sepelio=timezone.now(),
+            acta_renap_pdf="inhumaciones/actas_renap/test.pdf",
+            estado_inhumacion='ACTIVA'
+        )
+
+        # 2. Cliente anónimo sin autenticar
+        anon_client = APIClient()
+        url = reverse('publico-buscar-memorial')
+        response = anon_client.get(url, {'q': 'Roberto'})
+
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertGreaterEqual(len(response.data), 1)
+        item = response.data[0]
+        self.assertIn("Roberto", item['nombre_completo'])
+        self.assertIn("ubicacion", item)
+        self.assertNotIn("contrato", item)  # Privacidad: No expone contratos ni datos sensibles

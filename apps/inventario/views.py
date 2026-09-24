@@ -9,7 +9,8 @@ Este archivo define los `ModelViewSet` de DRF para las entidades del Módulo B:
 - EspacioFisicoViewSet
 """
 
-from rest_framework import viewsets, status
+from rest_framework import viewsets, status, permissions
+from rest_framework.views import APIView
 from rest_framework.decorators import action
 from rest_framework.response import Response
 from drf_spectacular.utils import extend_schema, OpenApiResponse
@@ -23,6 +24,99 @@ from .serializers import (
     EspacioFisicoSerializer,
     EstructuraMatrizSerializer
 )
+
+
+# ==============================================================================
+# 0. VISTA PÚBLICA DE CATÁLOGO DE ESPACIOS E INMUEBLES
+# ==============================================================================
+class CatalogoPublicoEspaciosView(APIView):
+    """
+    Endpoint público para catálogo y cotización de tipos de espacios memoriales.
+    Permiso AllowAny (sin requerir inicio de sesión).
+    """
+    permission_classes = [permissions.AllowAny]
+
+    @extend_schema(
+        summary="Catálogo Público de Tipos de Espacios e Inmuebles",
+        description="Retorna la oferta de tipos de nichos, capacidades y tarifas referenciales para cotización ciudadana.",
+        responses={200: OpenApiResponse(description="Catálogo de espacios memoriales")}
+    )
+    def get(self, request):
+        catalogo = [
+            {
+                'id': 1,
+                'tipo': 'Nicho Individual en Pabellón',
+                'categoria': 'Pabellón Vertical',
+                'capacidad': '1 Difunto',
+                'precio_base': 15000.00,
+                'cuota_minima_mes': 250.00,
+                'plazos_disponibles': [24, 36, 48, 60],
+                'descripcion': 'Espacio individual en pabellón vertical de concreto reforzado, con acabado sellado hermético y placa conmemorativa incluida.',
+                'caracteristicas': [
+                    'Medidas estándar: 2.20m largo x 0.90m ancho x 0.80m alto',
+                    'Sellado hermético y placa de granito conmemorativa',
+                    'Mantenimiento y jardinería permanente del pabellón',
+                    'Derecho de uso y resguardo a perpetuidad'
+                ],
+                'icono': 'bi-grid-3x3',
+                'badge': 'Más Accesible'
+            },
+            {
+                'id': 2,
+                'tipo': 'Módulo Familiar (2 a 4 Nichos)',
+                'categoria': 'Pabellón Familiar',
+                'capacidad': '2 a 4 Espacios',
+                'precio_base': 28000.00,
+                'cuota_minima_mes': 466.67,
+                'plazos_disponibles': [24, 36, 48, 60],
+                'descripcion': 'Módulo familiar contiguo para preservar la unión familiar en un sector preferencial con áreas verdes y fácil acceso peatonal.',
+                'caracteristicas': [
+                    'Disposición modular contigua para la familia',
+                    'Placa conmemorativa familiar personalizada',
+                    'Financiamiento flexible hasta 60 cuotas mensuales',
+                    'Descuento preferencial en servicios de inhumación'
+                ],
+                'icono': 'bi-people-fill',
+                'badge': 'Recomendado'
+            },
+            {
+                'id': 3,
+                'tipo': 'Mausoleo Familiar Privado',
+                'categoria': 'Mausoleo Exclusivo',
+                'capacidad': '6 a 8 Espacios',
+                'precio_base': 65000.00,
+                'cuota_minima_mes': 1083.33,
+                'plazos_disponibles': [24, 36, 48, 60],
+                'descripcion': 'Construcción arquitectónica exclusiva con jardines privados, acabados en piedra tallada y acceso independiente.',
+                'caracteristicas': [
+                    'Estructura privada con jardineras y bancas de descanso',
+                    'Capacidad multigeneracional de hasta 8 espacios',
+                    'Iluminación solar y mantenimiento preferencial',
+                    'Asesoría legal y trámites de escrituración perpetua'
+                ],
+                'icono': 'bi-bank',
+                'badge': 'Exclusivo'
+            },
+            {
+                'id': 4,
+                'tipo': 'Cripta / Capilla Conmemorativa',
+                'categoria': 'Capilla Solemne',
+                'capacidad': 'Espacio Familiar Amplio',
+                'precio_base': 95000.00,
+                'cuota_minima_mes': 1583.33,
+                'plazos_disponibles': [24, 36, 48, 60],
+                'descripcion': 'Espacio de alta solemnidad con capilla techada para ceremonias privadas, nichos y osarios con seguridad y recogimiento.',
+                'caracteristicas': [
+                    'Espacio techado para oración, recogimiento y aniversarios',
+                    'Acabados en mármol, piedra natural y vitrales',
+                    'Sistema de seguridad y acceso preferencial 24/7',
+                    'Planes de pago personalizados y asesoría integral'
+                ],
+                'icono': 'bi-gem',
+                'badge': 'Distinción'
+            }
+        ]
+        return Response(catalogo, status=status.HTTP_200_OK)
 
 
 # ==============================================================================

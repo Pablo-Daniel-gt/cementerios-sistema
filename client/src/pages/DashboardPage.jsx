@@ -52,7 +52,7 @@ export const DashboardPage = () => {
         <div>
           <h3 className="fw-bold text-dark mb-1">Panel de Control General</h3>
           <p className="text-muted mb-0">
-            Bienvenido(a), <span className="fw-semibold text-primary">{user?.first_name || user?.username}</span> | Rol: <span className="badge bg-dark">{role}</span>
+            Bienvenido(a), <span className="fw-semibold text-primary">{user?.first_name || user?.username}</span>
           </p>
         </div>
       </div>

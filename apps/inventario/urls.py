@@ -12,7 +12,8 @@ from .views import (
     TipoEstructuraViewSet,
     EstadoEspacioViewSet,
     EstructuraFisicaViewSet,
-    EspacioFisicoViewSet
+    EspacioFisicoViewSet,
+    CatalogoPublicoEspaciosView
 )
 
 # Router predeterminado de DRF
@@ -26,5 +27,9 @@ router.register(r'estructuras', EstructuraFisicaViewSet, basename='estructura')
 router.register(r'espacios', EspacioFisicoViewSet, basename='espacio')
 
 urlpatterns = [
+    # Endpoint de catálogo público sin autenticación
+    path('publico/tipos-espacio/', CatalogoPublicoEspaciosView.as_view(), name='publico-tipos-espacio'),
+    
+    # Endpoints CRUD de inventario
     path('', include(router.urls)),
 ]

@@ -184,3 +184,14 @@ class InventarioAPITestCase(TestCase):
         }
         response = self.client.patch(url, payload, format='json')
         self.assertEqual(response.status_code, status.HTTP_200_OK)
+
+    def test_catalogo_publico_espacios_allow_any(self):
+        """Valida que el catálogo de tipos de espacio sea accesible públicamente sin credenciales."""
+        anon_client = APIClient()
+        url = '/api/v1/inventario/publico/tipos-espacio/'
+        response = anon_client.get(url)
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertIsInstance(response.data, list)
+        self.assertGreaterEqual(len(response.data), 1)
+        self.assertIn('precio_base', response.data[0])
+        self.assertIn('plazos_disponibles', response.data[0])

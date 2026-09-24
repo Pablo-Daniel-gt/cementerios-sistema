@@ -8,6 +8,7 @@ Este archivo define los `ModelViewSet` para la API REST del Módulo D:
 """
 
 from rest_framework import viewsets, status, permissions
+from rest_framework.views import APIView
 from rest_framework.decorators import action
 from rest_framework.response import Response
 from rest_framework.parsers import MultiPartParser, FormParser, JSONParser
@@ -19,6 +20,75 @@ from .models import Difunto, RegistroInhumacion
 from .serializers import DifuntoSerializer, RegistroInhumacionSerializer
 from apps.inventario.models import EstadoEspacio
 from apps.cuentas.models import Bitacora
+
+
+# ==============================================================================
+# 0. VISTA PÚBLICA DE BÚSQUEDA MEMORIAL (PORTAL PÚBLICO)
+# ==============================================================================
+class ConsultaPublicaMemorialView(APIView):
+    """
+    Endpoint público para consulta ciudadana de difuntos y sepelios memoriales.
+    Permiso AllowAny (no requiere inicio de sesión).
+    Protege la privacidad no exponiendo datos comerciales ni información sensible.
+    """
+    permission_classes = [permissions.AllowAny]
+
+    @extend_schema(
+        summary="Búsqueda Pública de Registros Memoriales",
+        description="Permite al público consultar registros de sepelios y ubicación en camposanto sin requerir autenticación.",
+        responses={200: OpenApiResponse(description="Listado de difuntos y su ubicación")}
+    )
+    def get(self, request):
+        q = request.query_params.get('q', '').strip()
+
+        qs = RegistroInhumacion.objects.select_related(
+            'difunto',
+            'espacio__estructura__sector'
+        ).filter(estado_inhumacion__in=['ACTIVA', 'EXHUMADO', 'TRASLADADO'])
+
+        if q:
+            qs = qs.filter(
+                Q(difunto__nombres__icontains=q) |
+                Q(difunto__apellidos__icontains=q) |
+                Q(difunto__cui__icontains=q) |
+                Q(espacio__codigo_unico_espacio__icontains=q) |
+                Q(espacio__estructura__nombre_estructura__icontains=q) |
+                Q(espacio__estructura__sector__nombre_sector__icontains=q)
+            ).order_by('-fecha_sepelio')[:50]
+        else:
+            # Mostrar los registros más recientes como muestra inicial
+            qs = qs.order_by('-fecha_sepelio')[:12]
+
+        resultados = []
+        for reg in qs:
+            cui_raw = reg.difunto.cui or ""
+            # Enmascaramiento de CUI para proteger privacidad ciudadana
+            if len(cui_raw) == 13:
+                cui_display = f"{cui_raw[:4]} •••• {cui_raw[-4:]}"
+            elif cui_raw:
+                cui_display = f"{cui_raw[:2]}••••{cui_raw[-2:]}"
+            else:
+                cui_display = "Sin CUI"
+
+            sector_nom = reg.espacio.estructura.sector.nombre_sector if reg.espacio.estructura.sector else "Camposanto General"
+            estructura_nom = reg.espacio.estructura.nombre_estructura
+            codigo_nicho = reg.espacio.codigo_unico_espacio
+
+            resultados.append({
+                'id': reg.id,
+                'difunto_id': reg.difunto.id,
+                'nombre_completo': f"{reg.difunto.nombres} {reg.difunto.apellidos}".strip(),
+                'cui': cui_display,
+                'fecha_defuncion': reg.difunto.fecha_defuncion.strftime('%d/%m/%Y') if reg.difunto.fecha_defuncion else "No registrada",
+                'fecha_sepelio': reg.fecha_sepelio.strftime('%d/%m/%Y %H:%M') if reg.fecha_sepelio else "No registrada",
+                'ubicacion': f"{sector_nom} — {estructura_nom} ({codigo_nicho})",
+                'sector': sector_nom,
+                'estructura': estructura_nom,
+                'nicho': codigo_nicho,
+                'estado': reg.get_estado_inhumacion_display()
+            })
+
+        return Response(resultados, status=status.HTTP_200_OK)
 
 
 # ==============================================================================

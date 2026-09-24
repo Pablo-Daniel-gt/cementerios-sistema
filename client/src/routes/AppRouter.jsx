@@ -22,19 +22,34 @@ import { ProtectedRoute } from './ProtectedRoute';
 import { Layout } from '../components/Layout';
 import { useAuth } from '../context/AuthContext';
 
+// Importación de Componentes y Vistas Públicas (Landing Page Memorial)
+import { PublicLayout } from '../components/public/PublicLayout';
+import { HomePage } from '../pages/public/HomePage';
+import { ServiciosPage } from '../pages/public/ServiciosPage';
+import { CotizadorPublicoPage } from '../pages/public/CotizadorPublicoPage';
+import { ContactoPage } from '../pages/public/ContactoPage';
+
 export const AppRouter = () => {
   const { isAuthenticated, role } = useAuth();
 
-  // Función para determinar la ruta por defecto según el rol
+  // Función para determinar la ruta por defecto según el rol o redirigir al portal público
   const getDefaultRedirect = () => {
-    if (!isAuthenticated) return <Navigate to="/login" replace />;
+    if (!isAuthenticated) return <Navigate to="/" replace />;
     if (role === 'Cliente Propietario') return <Navigate to="/portal-cliente" replace />;
     return <Navigate to="/dashboard" replace />;
   };
 
   return (
     <Routes>
-      {/* Ruta Pública: Login */}
+      {/* 1. Rutas Públicas bajo PublicLayout */}
+      <Route element={<PublicLayout />}>
+        <Route path="/" element={<HomePage />} />
+        <Route path="/servicios" element={<ServiciosPage />} />
+        <Route path="/cotizador-publico" element={<CotizadorPublicoPage />} />
+        <Route path="/contacto" element={<ContactoPage />} />
+      </Route>
+
+      {/* 2. Ruta de Autenticación */}
       <Route
         path="/login"
         element={

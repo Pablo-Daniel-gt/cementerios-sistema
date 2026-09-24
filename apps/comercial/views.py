@@ -12,7 +12,7 @@ Este archivo define los `ModelViewSet` y vistas personalizadas para la gestión 
 - AlertasMoraView (GET /api/v1/comercial/alertas-mora/ - RF-06)
 """
 
-from rest_framework import viewsets, status
+from rest_framework import viewsets, status, permissions
 from rest_framework.views import APIView
 from rest_framework.decorators import action
 from rest_framework.response import Response
@@ -265,7 +265,9 @@ class CotizadorView(APIView):
     POST /api/v1/comercial/cotizar/
     Simulador financiero para proyectar cuotas y enganche.
     Permite exportar a PDF (RF-01) con importes formateados en Quetzales (Q00.00).
+    Permiso público AllowAny para facilitar cotizaciones ciudadanas.
     """
+    permission_classes = [permissions.AllowAny]
 
     @extend_schema(
         summary="Cotizador Financiero Automático (RF-01)",

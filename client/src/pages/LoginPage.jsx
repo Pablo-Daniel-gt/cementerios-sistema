@@ -1,6 +1,6 @@
 import { useForm } from 'react-hook-form';
 import { useAuth } from '../context/AuthContext';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, Link } from 'react-router-dom';
 import toast from 'react-hot-toast';
 
 export const LoginPage = () => {
@@ -22,15 +22,22 @@ export const LoginPage = () => {
   };
 
   return (
-    <div className="d-flex justify-content-center align-items-center min-vh-100 bg-secondary bg-gradient">
+    <div className="d-flex flex-column justify-content-center align-items-center min-vh-100 bg-navy-dark px-3 py-4">
+      <div className="mb-3 text-start" style={{ maxWidth: '420px', width: '100%' }}>
+        <Link to="/" className="text-white-50 text-decoration-none small d-inline-flex align-items-center gap-1.5 hover-text-white">
+          <i className="bi bi-arrow-left"></i>
+          <span>Volver al Portal Público Memorial</span>
+        </Link>
+      </div>
+
       <div className="card shadow-lg border-0 rounded-4" style={{ maxWidth: '420px', width: '100%' }}>
         <div className="card-body p-4 p-sm-5">
           <div className="text-center mb-4">
             <div className="bg-primary text-white d-inline-flex p-3 rounded-circle mb-3 shadow">
-              <i className="bi bi-bank fs-2"></i>
+              <i className="bi bi-flower1 fs-2 text-warning"></i>
             </div>
-            <h4 className="fw-bold text-dark mb-1">Inicio de Sesión</h4>
-            <p className="text-muted small">Sistema Web Cementerios Privados</p>
+            <h4 className="fw-bold text-dark mb-1">Acceso al Sistema</h4>
+            <p className="text-muted small">Camposanto Memorial Los Robles</p>
           </div>
 
           <form onSubmit={handleSubmit(onSubmit)}>
