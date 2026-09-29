@@ -156,6 +156,13 @@ class EstructuraFisicaSerializer(serializers.ModelSerializer):
         fields = '__all__'
 
     def get_disponible_completa(self, obj):
+        if hasattr(obj, '_prefetched_objects_cache') and 'espacios' in obj._prefetched_objects_cache:
+            espacios = obj._prefetched_objects_cache['espacios']
+            total = len(espacios)
+            if total == 0:
+                return False
+            disponibles = sum(1 for e in espacios if getattr(e.estado, 'nombre_estado', '') == 'Disponible' and not hasattr(e, 'detalle_contrato'))
+            return disponibles == total
         total = obj.espacios.count()
         if total == 0:
             return False
@@ -163,6 +170,8 @@ class EstructuraFisicaSerializer(serializers.ModelSerializer):
         return disponibles == total
 
     def get_total_espacios_creados(self, obj):
+        if hasattr(obj, '_prefetched_objects_cache') and 'espacios' in obj._prefetched_objects_cache:
+            return len(obj._prefetched_objects_cache['espacios'])
         return obj.espacios.count()
 
 

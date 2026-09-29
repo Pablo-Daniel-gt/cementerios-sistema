@@ -2,12 +2,10 @@ import React, { useEffect, useState } from 'react';
 import toast from 'react-hot-toast';
 import { crearRegistroInhumacion, getDifuntos } from '../../api/inhumaciones.api';
 import { getContratos, getEstadoCuenta } from '../../api/comercial.api';
-import { getEspacios } from '../../api/inventario.api';
 
 export const InhumacionFormModal = ({ difuntoPreseleccionado, onClose, onSuccess }) => {
   const [difuntos, setDifuntos] = useState([]);
   const [contratos, setContratos] = useState([]);
-  const [espaciosDisponibles, setEspaciosDisponibles] = useState([]);
 
   const [selectedDifuntoId, setSelectedDifuntoId] = useState(difuntoPreseleccionado?.id || '');
   const [selectedContratoId, setSelectedContratoId] = useState('');
@@ -29,10 +27,9 @@ export const InhumacionFormModal = ({ difuntoPreseleccionado, onClose, onSuccess
   const cargarCatalogos = async () => {
     setLoadingCatalogos(true);
     try {
-      const [resDif, resCnt, resEsp] = await Promise.all([
+      const [resDif, resCnt] = await Promise.all([
         getDifuntos(),
         getContratos(),
-        getEspacios(),
       ]);
 
       // Filtrar sólo difuntos que NO tengan inhumación registrada o el preseleccionado
@@ -47,8 +44,6 @@ export const InhumacionFormModal = ({ difuntoPreseleccionado, onClose, onSuccess
         return est === 'activo' || est === 'liquidado';
       });
       setContratos(contratosValidos);
-
-      setEspaciosDisponibles(resEsp.data || []);
     } catch (error) {
       console.error('Error al cargar catálogos para sepelio:', error);
       toast.error('Error al obtener catálogos para el registro de inhumación.');
@@ -98,6 +93,7 @@ export const InhumacionFormModal = ({ difuntoPreseleccionado, onClose, onSuccess
     }
 
     setLoadingSave(true);
+    const toastId = toast.loading('Validando solvencia y registrando sepelio...');
     try {
       const formData = new FormData();
       formData.append('difunto', selectedDifuntoId);
@@ -113,11 +109,12 @@ export const InhumacionFormModal = ({ difuntoPreseleccionado, onClose, onSuccess
       }
 
       await crearRegistroInhumacion(formData);
-      toast.success('Inhumación autorizada y registrada exitosamente. Nicho actualizado a Ocupado.');
+      toast.success('Inhumación autorizada y registrada exitosamente. Nicho actualizado a Ocupado.', { id: toastId });
       onSuccess();
       onClose();
     } catch (error) {
       console.error('Error al registrar inhumación:', error);
+      toast.dismiss(toastId);
     } finally {
       setLoadingSave(false);
     }
@@ -219,21 +216,20 @@ export const InhumacionFormModal = ({ difuntoPreseleccionado, onClose, onSuccess
                     value={selectedEspacioId}
                     onChange={(e) => setSelectedEspacioId(e.target.value)}
                     required
+                    disabled={!selectedContratoId}
                   >
-                    <option value="">-- Seleccione el nicho correspondiente --</option>
-                    {nichosDisponiblesContrato.length > 0 ? (
-                      nichosDisponiblesContrato.map((e) => (
-                        <option key={e.id_espacio} value={e.id_espacio}>
-                          {e.codigo_unico_espacio} — Sector: {e.sector} ({e.estructura})
-                        </option>
-                      ))
-                    ) : (
-                      espaciosDisponibles.map((e) => (
-                        <option key={e.id_espacio} value={e.id_espacio}>
-                          {e.codigo_unico_espacio} — Sector: {e.estructura_nombre} (Estado: {e.estado_nombre})
-                        </option>
-                      ))
-                    )}
+                    <option value="">
+                      {!selectedContratoId
+                        ? '-- Primero seleccione un contrato autorizante --'
+                        : nichosDisponiblesContrato.length === 0
+                        ? '-- El contrato seleccionado no tiene nichos asignados --'
+                        : '-- Seleccione el nicho correspondiente --'}
+                    </option>
+                    {nichosDisponiblesContrato.map((e) => (
+                      <option key={e.id_espacio} value={e.id_espacio}>
+                        {e.codigo_unico_espacio} — Sector: {e.sector} ({e.estructura})
+                      </option>
+                    ))}
                   </select>
                 </div>
 

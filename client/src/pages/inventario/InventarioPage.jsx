@@ -88,12 +88,16 @@ export function InventarioPage() {
     const nombreEst = estActual ? estActual.nombre_estructura : 'la estructura';
 
     if (window.confirm(`¿Desea generar todos los nichos faltantes para "${nombreEst}"?`)) {
+      const toastId = toast.loading('Generando nichos en lote... Esto puede tomar unos instantes según la conexión.');
       try {
         const res = await generarLoteEspacios(selectedEstructuraId);
-        toast.success(res.data.mensaje || 'Nichos generados correctamente.');
+        toast.success(res.data.mensaje || 'Nichos generados correctamente.', { id: toastId });
         cargarMatriz(selectedEstructuraId);
       } catch (error) {
         console.error('Error al generar nichos:', error);
+        toast.dismiss(toastId);
+        toast.error('La operación está tomando más tiempo del habitual. Por favor verifique el mapa o intente nuevamente.');
+        cargarMatriz(selectedEstructuraId);
       }
     }
   };
@@ -146,10 +150,9 @@ export function InventarioPage() {
   return (
     <div className="container-fluid p-4">
       {/* Encabezado Principal de la Página */}
-      <div className="d-flex justify-content-between align-items-center flex-wrap gap-2 mb-4 pb-3 border-bottom">
+      <div className="d-flex justify-content-between align-items-center flex-wrap gap-2 mb-4 pb-3">
         <div>
           <h3 className="fw-bold text-dark m-0 d-flex align-items-center gap-2">
-            <i className="bi bi-grid-3x3-gap text-primary"></i>
             Inventario de Inmuebles y Espacios
           </h3>
           <p className="text-muted mb-0" style={{ fontSize: '0.9rem' }}>

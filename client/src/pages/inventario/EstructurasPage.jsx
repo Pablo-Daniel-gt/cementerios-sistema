@@ -119,12 +119,16 @@ export function EstructurasPage() {
   // --- GENERACIÓN EN LOTE DE NICHOS (REQUISITO 1) ---
   const handleGenerarLote = async (idEst, nombre) => {
     if (window.confirm(`¿Desea autogenerar los nichos (espacios físicos) faltantes para la estructura "${nombre}"?`)) {
+      const toastId = toast.loading(`Generando nichos para "${nombre}"... Esto puede tomar unos instantes.`);
       try {
         const response = await generarLoteEspacios(idEst);
-        toast.success(response.data.mensaje || 'Nichos generados exitosamente.');
+        toast.success(response.data.mensaje || 'Nichos generados exitosamente.', { id: toastId });
         cargarDatos();
       } catch (error) {
         console.error('Error al generar nichos en lote:', error);
+        toast.dismiss(toastId);
+        toast.error('La operación está tomando más tiempo del habitual. Por favor verifique el catálogo o intente nuevamente.');
+        cargarDatos();
       }
     }
   };

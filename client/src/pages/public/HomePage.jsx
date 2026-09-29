@@ -1,9 +1,11 @@
 import { useState, useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { buscarMemorialPublico, getCatalogoEspaciosPublico } from '../../api/publico.api';
+import { useAuth } from '../../context/AuthContext';
 import toast from 'react-hot-toast';
 
 export const HomePage = () => {
+  const { isAuthenticated, role } = useAuth();
   const [query, setQuery] = useState('');
   const [loading, setLoading] = useState(false);
   const [resultados, setResultados] = useState([]);
@@ -241,25 +243,6 @@ export const HomePage = () => {
                 </div>
                 <Link to="/cotizador-publico" className="btn btn-outline-success btn-sm w-100 mt-2 fw-semibold">
                   Simular Plan de Pago <i className="bi bi-arrow-right ms-1"></i>
-                </Link>
-              </div>
-
-              {/* Tarjeta 3: Portal de Propietarios y Acceso al Sistema */}
-              <div className="card card-empathic p-4 border-0 bg-navy-dark text-white shadow">
-                <div className="d-flex align-items-start gap-3 mb-3">
-                  <div className="p-3 bg-white bg-opacity-10 text-warning rounded-3">
-                    <i className="bi bi-shield-lock-fill fs-3"></i>
-                  </div>
-                  <div>
-                    <h6 className="fw-bold mb-1 text-white">Portal de Clientes y Sistema</h6>
-                    <p className="text-white-50 small mb-0">
-                      Consulte sus contratos, estados de cuenta o acceda al panel administrativo.
-                    </p>
-                  </div>
-                </div>
-                <Link to="/login" className="btn btn-secondary-custom w-100 fw-semibold d-flex align-items-center justify-content-center gap-2">
-                  <i className="bi bi-box-arrow-in-right text-warning"></i>
-                  <span>Ingresar al Sistema</span>
                 </Link>
               </div>
             </div>

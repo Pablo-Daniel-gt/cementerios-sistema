@@ -42,14 +42,9 @@ export function NichoCard({ espacio, onSelect }) {
         </span>
       </div>
 
-      {/* Pie con Estado y Precio */}
-      <div className="d-flex justify-content-between align-items-center w-100" style={{ fontSize: '0.7rem' }}>
-        <span className="fw-semibold opacity-90">{espacio.estado}</span>
-        {espacio.precio_individual && (
-          <span className="fw-bold bg-black bg-opacity-25 px-1 rounded">
-            Q{Number(espacio.precio_individual).toLocaleString('es-GT')}
-          </span>
-        )}
+      {/* Pie con Estado */}
+      <div className="d-flex justify-content-center align-items-center w-100" style={{ fontSize: '0.72rem' }}>
+        <span className="fw-semibold opacity-90 text-truncate">{espacio.estado}</span>
       </div>
     </div>
   );

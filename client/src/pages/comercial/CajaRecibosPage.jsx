@@ -10,6 +10,7 @@ export const CajaRecibosPage = () => {
   const [recibos, setRecibos] = useState([]);
   const [loading, setLoading] = useState(true);
   const [busqueda, setBusqueda] = useState('');
+  const [limiteVisible, setLimiteVisible] = useState(10);
 
   const [reciboVer, setReciboVer] = useState(null);
   const [reciboEditar, setReciboEditar] = useState(null);
@@ -54,6 +55,7 @@ export const CajaRecibosPage = () => {
     );
   });
 
+  const recibosPaginados = recibosFiltrados.slice(0, limiteVisible);
   const totalIngresado = recibosFiltrados.reduce((sum, r) => sum + parseFloat(r.monto_ingresado || 0), 0);
 
   return (
@@ -115,7 +117,10 @@ export const CajaRecibosPage = () => {
                   className="form-control"
                   placeholder="Buscar por no. correlativo de recibo, contrato o método de pago..."
                   value={busqueda}
-                  onChange={(e) => setBusqueda(e.target.value)}
+                  onChange={(e) => {
+                    setBusqueda(e.target.value);
+                    setLimiteVisible(10);
+                  }}
                 />
               </div>
             </div>
@@ -152,7 +157,7 @@ export const CajaRecibosPage = () => {
                   </tr>
                 </thead>
                 <tbody>
-                  {recibosFiltrados.map((r) => (
+                  {recibosPaginados.map((r) => (
                     <tr key={r.id_recibo}>
                       <td className="fw-bold text-success">#{r.correlativo_recibo}</td>
                       <td className="fw-bold">{r.contrato_numero}</td>
@@ -200,6 +205,45 @@ export const CajaRecibosPage = () => {
             </div>
           )}
         </div>
+
+        {/* Barra de Paginación Acumulativa de 10 en 10 */}
+        {!loading && recibosFiltrados.length > 0 && (
+          <div className="card-footer bg-white d-flex justify-content-between align-items-center flex-wrap gap-2 py-3 border-top">
+            <div className="text-muted small">
+              Mostrando <strong className="text-dark">{Math.min(limiteVisible, recibosFiltrados.length)}</strong> de <strong className="text-dark">{recibosFiltrados.length}</strong> recibos registrados
+            </div>
+            <div className="d-flex gap-2 align-items-center">
+              {recibosFiltrados.length > limiteVisible && (
+                <button
+                  type="button"
+                  className="btn btn-outline-success btn-sm d-flex align-items-center gap-1 shadow-sm px-3"
+                  onClick={() => setLimiteVisible((prev) => prev + 10)}
+                >
+                  <i className="bi bi-plus-circle-fill"></i>
+                  <span>Cargar 10 recibos más (+10)</span>
+                </button>
+              )}
+              {recibosFiltrados.length > limiteVisible && (
+                <button
+                  type="button"
+                  className="btn btn-outline-secondary btn-sm"
+                  onClick={() => setLimiteVisible(recibosFiltrados.length)}
+                >
+                  Mostrar todos ({recibosFiltrados.length})
+                </button>
+              )}
+              {limiteVisible > 10 && (
+                <button
+                  type="button"
+                  className="btn btn-outline-dark btn-sm"
+                  onClick={() => setLimiteVisible(10)}
+                >
+                  Restablecer a 10
+                </button>
+              )}
+            </div>
+          </div>
+        )}
       </div>
 
       {/* MODAL VER DETALLE RECIBO */}

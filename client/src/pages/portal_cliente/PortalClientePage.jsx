@@ -5,6 +5,8 @@ import { getContratos } from '../../api/comercial.api';
 import { EstadoCuentaModal } from '../../components/comercial/EstadoCuentaModal';
 import toast from 'react-hot-toast';
 
+import { Link } from 'react-router-dom';
+
 export const PortalClientePage = () => {
   const { user } = useAuth();
   const [clienteInfo, setClienteInfo] = useState(null);
@@ -53,16 +55,27 @@ export const PortalClientePage = () => {
     <div>
       {/* Encabezado Principal */}
       <div className="bg-primary text-white p-4 rounded-3 mb-4 shadow-sm">
-        <div className="d-flex align-items-center gap-3">
-          <div className="bg-white text-primary p-3 rounded-circle shadow-sm">
-            <i className="bi bi-person-workspace fs-2"></i>
+        <div className="d-flex justify-content-between align-items-center flex-wrap gap-3">
+          <div className="d-flex align-items-center gap-3">
+            <div className="bg-white text-primary p-3 rounded-circle shadow-sm">
+              <i className="bi bi-person-workspace fs-2"></i>
+            </div>
+            <div>
+              <h3 className="fw-bold mb-1">Portal del Cliente Propietario</h3>
+              <p className="mb-0 text-white-50">
+                Bienvenido(a), <span className="text-white fw-semibold">{user?.first_name || user?.username}</span>
+              </p>
+            </div>
           </div>
-          <div>
-            <h3 className="fw-bold mb-1">Portal del Cliente Propietario</h3>
-            <p className="mb-0 text-white-50">
-              Bienvenido(a), <span className="text-white fw-semibold">{user?.first_name || user?.username}</span>
-            </p>
-          </div>
+
+          <Link
+            to="/"
+            className="btn btn-outline-light btn-sm d-flex align-items-center gap-2 px-3 py-2 rounded-pill shadow-sm"
+            title="Volver a la página de inicio del cementerio"
+          >
+            <i className="bi bi-globe text-warning"></i>
+            <span>Volver al Sitio Web</span>
+          </Link>
         </div>
       </div>
 

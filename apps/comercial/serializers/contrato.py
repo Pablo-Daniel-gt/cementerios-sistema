@@ -132,6 +132,16 @@ class ContratoSerializer(serializers.ModelSerializer):
         read_only_fields = ['id_contrato', 'monto_financiar']
 
     def get_enganche_pagado(self, obj):
+        if hasattr(obj, '_prefetched_objects_cache') and 'recibos_pago' in obj._prefetched_objects_cache:
+            for recibo in obj._prefetched_objects_cache['recibos_pago']:
+                detalles = getattr(recibo, '_prefetched_objects_cache', {}).get('detalles', None)
+                if detalles is not None:
+                    for det in detalles:
+                        if det.concepto == 'ENGANCHE':
+                            return True
+                elif recibo.detalles.filter(concepto='ENGANCHE').exists():
+                    return True
+            return False
         return DetallePagoRecibo.objects.filter(recibo__contrato=obj, concepto='ENGANCHE').exists()
 
     def validate_estado_contrato(self, value):

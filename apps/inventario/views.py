@@ -160,7 +160,7 @@ class EstructuraFisicaViewSet(viewsets.ModelViewSet):
     ViewSet para la gestión de Estructuras Físicas.
     Incluye los endpoints para la Matriz Visual 2D (RF-02) y la generación en lote de nichos.
     """
-    queryset = EstructuraFisica.objects.all().select_related('sector', 'tipo_estructura').order_by('id_estructura')
+    queryset = EstructuraFisica.objects.all().select_related('sector', 'tipo_estructura').prefetch_related('espacios__estado', 'espacios__detalle_contrato').order_by('id_estructura')
     serializer_class = EstructuraFisicaSerializer
 
     @extend_schema(
@@ -187,7 +187,7 @@ class EstructuraFisicaViewSet(viewsets.ModelViewSet):
     def generar_lote(self, request, pk=None):
         """
         POST /api/v1/inventario/estructuras/{id}/generar-lote/
-        Genera en lote todos los nichos faltantes de la estructura seleccionada.
+        Genera en lote todos los nichos faltantes de la estructura seleccionada de forma atómica y ultra-rápida.
         """
         estructura = self.get_object()
         estado_disponible, _ = EstadoEspacio.objects.get_or_create(
@@ -198,20 +198,34 @@ class EstructuraFisicaViewSet(viewsets.ModelViewSet):
         if estructura.precio_estructura_completa and estructura.capacidad_total_espacios:
             precio_ind = estructura.precio_estructura_completa / estructura.capacidad_total_espacios
 
-        total_creados = 0
+        # Obtener en UNA sola consulta todas las coordenadas ya existentes
+        existentes = set(
+            EspacioFisico.objects.filter(estructura=estructura).values_list('posicion_fila', 'posicion_columna')
+        )
+
+        sec_nom = estructura.sector.nomenclatura if estructura.sector_id else "SEC"
+        est_cod = estructura.codigo_estructura
+
+        nuevos_espacios = []
         for fila in range(1, estructura.total_filas + 1):
             for col in range(1, estructura.total_columnas + 1):
-                _, created = EspacioFisico.objects.get_or_create(
-                    estructura=estructura,
-                    posicion_fila=fila,
-                    posicion_columna=col,
-                    defaults={
-                        'estado': estado_disponible,
-                        'precio_individual': precio_ind
-                    }
-                )
-                if created:
-                    total_creados += 1
+                if (fila, col) not in existentes:
+                    codigo = f"{sec_nom}-{est_cod}-F{fila}-C{col}"
+                    nuevos_espacios.append(
+                        EspacioFisico(
+                            estructura=estructura,
+                            estado=estado_disponible,
+                            posicion_fila=fila,
+                            posicion_columna=col,
+                            codigo_unico_espacio=codigo,
+                            precio_individual=precio_ind
+                        )
+                    )
+
+        total_creados = 0
+        if nuevos_espacios:
+            EspacioFisico.objects.bulk_create(nuevos_espacios, batch_size=500)
+            total_creados = len(nuevos_espacios)
 
         return Response({
             'mensaje': f'Se han generado {total_creados} nichos (espacios físicos) para "{estructura.nombre_estructura}".',
@@ -228,7 +242,7 @@ class EspacioFisicoViewSet(viewsets.ModelViewSet):
     ViewSet para operaciones CRUD de Espacios Físicos (Nichos individuales).
     Permite filtrado dinámico por `estructura` y por `estado`.
     """
-    queryset = EspacioFisico.objects.all().select_related('estructura', 'estado').order_by('estructura', 'posicion_fila', 'posicion_columna')
+    queryset = EspacioFisico.objects.all().select_related('estructura__sector', 'estado', 'detalle_contrato').order_by('estructura', 'posicion_fila', 'posicion_columna')
     serializer_class = EspacioFisicoSerializer
 
     def get_queryset(self):

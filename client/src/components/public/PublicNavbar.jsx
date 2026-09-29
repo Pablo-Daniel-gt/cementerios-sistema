@@ -29,7 +29,7 @@ export const PublicNavbar = () => {
           </div>
           <div>
             <div className="fw-bold fs-6 lh-sm" style={{ letterSpacing: '-0.02em' }}>
-              Camposanto Memorial Los Robles
+              Cementerio Privado
             </div>
             <div className="text-white-50 small lh-1" style={{ fontSize: '0.75rem' }}>
               Huehuetenango, Guatemala
@@ -58,7 +58,7 @@ export const PublicNavbar = () => {
                 className={({ isActive }) => `public-navbar-link ${isActive ? 'active' : ''}`}
                 onClick={() => setIsOpen(false)}
               >
-                <i className="bi bi-house-door me-1.5"></i>
+                <i className="bi bi-house-door me-2"></i>
                 Inicio
               </NavLink>
             </li>
@@ -68,7 +68,7 @@ export const PublicNavbar = () => {
                 className={({ isActive }) => `public-navbar-link ${isActive ? 'active' : ''}`}
                 onClick={() => setIsOpen(false)}
               >
-                <i className="bi bi-grid-3x3-gap me-1.5"></i>
+                <i className="bi bi-grid-3x3-gap me-2"></i>
                 Servicios Memoriales
               </NavLink>
             </li>
@@ -78,7 +78,7 @@ export const PublicNavbar = () => {
                 className={({ isActive }) => `public-navbar-link ${isActive ? 'active' : ''}`}
                 onClick={() => setIsOpen(false)}
               >
-                <i className="bi bi-calculator me-1.5"></i>
+                <i className="bi bi-calculator me-2"></i>
                 Cotizador de Planes
               </NavLink>
             </li>
@@ -88,7 +88,7 @@ export const PublicNavbar = () => {
                 className={({ isActive }) => `public-navbar-link ${isActive ? 'active' : ''}`}
                 onClick={() => setIsOpen(false)}
               >
-                <i className="bi bi-geo-alt me-1.5"></i>
+                <i className="bi bi-geo-alt me-2"></i>
                 Ubicación y Contacto
               </NavLink>
             </li>
@@ -102,7 +102,7 @@ export const PublicNavbar = () => {
               title={isAuthenticated ? 'Ir al Panel del Sistema' : 'Iniciar Sesión en el Sistema'}
             >
               <i className={`bi ${isAuthenticated ? 'bi-speedometer2' : 'bi-shield-lock-fill'} fs-6 text-warning`}></i>
-              <span>{isAuthenticated ? 'Panel del Sistema' : 'Ingresar al Sistema'}</span>
+              <span>{isAuthenticated ? 'Panel del Sistema' : ''}</span>
             </button>
           </div>
         </div>

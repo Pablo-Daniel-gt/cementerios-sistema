@@ -12,12 +12,7 @@ export const LoginPage = () => {
     const result = await login(data);
 
     if (result.success) {
-      const userRole = result.user.rol;
-      if (userRole === 'Cliente Propietario') {
-        navigate('/portal-cliente');
-      } else {
-        navigate('/dashboard');
-      }
+      navigate('/');
     }
   };
 

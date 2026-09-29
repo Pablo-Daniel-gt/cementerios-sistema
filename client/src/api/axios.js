@@ -7,7 +7,7 @@ const instance = axios.create({
   headers: {
     'Content-Type': 'application/json',
   },
-  timeout: 10000,
+  timeout: 45000,
 });
 
 // Interceptor de peticiones (Request Interceptor)
@@ -78,8 +78,10 @@ instance.interceptors.response.use(
         default:
           toast.error(data?.detail || data?.error || 'Ocurrió un error en la solicitud.');
       }
+    } else if (error.code === 'ECONNABORTED' || error.message?.toLowerCase().includes('timeout')) {
+      toast.error('La operación está tomando más tiempo del esperado debido a la conexión con la base de datos. Por favor espere unos momentos o intente de nuevo.');
     } else if (error.request) {
-      toast.error('No se pudo conectar con el servidor backend (ERR_CONNECTION_REFUSED). Verifique que Django esté activo.');
+      toast.error('No se pudo conectar con el servidor backend. Verifique que Django esté activo y su conexión a internet.');
     } else {
       toast.error('Error al procesar la solicitud.');
     }

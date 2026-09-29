@@ -79,7 +79,8 @@ class ContratoViewSet(viewsets.ModelViewSet):
     ).prefetch_related(
         'detalles_espacio__espacio__estructura__sector',
         'plan_cuotas',
-        'control_mantenimientos'
+        'control_mantenimientos',
+        'recibos_pago__detalles'
     ).order_by('-id_contrato')
     serializer_class = ContratoSerializer
 
@@ -362,16 +363,22 @@ class AlertasMoraView(APIView):
 
         # 0. Garantizar que todos los contratos (Activos o Liquidados) tengan registro de mantenimiento anual para el año en curso
         contratos_vigentes = Contrato.objects.exclude(estado_contrato__nombre_estado_contrato='Cancelado')
-        for cnt in contratos_vigentes:
-            ControlMantenimiento.objects.get_or_create(
+        mantenimientos_existentes_ids = set(
+            ControlMantenimiento.objects.filter(anio_periodo=hoy.year).values_list('contrato_id', flat=True)
+        )
+        nuevos_mantenimientos = [
+            ControlMantenimiento(
                 contrato=cnt,
                 anio_periodo=hoy.year,
-                defaults={
-                    'monto_mantenimiento': 500.00,
-                    'fecha_limite_pago': date(hoy.year, 12, 31),
-                    'estado_cobro': 'PENDIENTE'
-                }
+                monto_mantenimiento=500.00,
+                fecha_limite_pago=date(hoy.year, 12, 31),
+                estado_cobro='PENDIENTE'
             )
+            for cnt in contratos_vigentes
+            if cnt.id_contrato not in mantenimientos_existentes_ids
+        ]
+        if nuevos_mantenimientos:
+            ControlMantenimiento.objects.bulk_create(nuevos_mantenimientos, batch_size=500)
 
         # 1. Actualizar de forma atómica cobros de mantenimiento vencidos a EN_MORA
         ControlMantenimiento.objects.filter(
