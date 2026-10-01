@@ -17,6 +17,9 @@ dj-database-url>=2.1.0
 # Generación de reportes PDF
 reportlab>=4.0.0
 
+# Manejo y cálculo de fechas
+python-dateutil>=2.8.2
+
 # Documentacion de la API
 drf-spectacular>=0.27.0
 coreapi>=2.3.3
