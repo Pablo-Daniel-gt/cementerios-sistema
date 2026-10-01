@@ -36,8 +36,11 @@ DEBUG = os.getenv('DEBUG', 'False').lower() in ('true', '1', 't')
 
 DEFAULT_ALLOWED_HOSTS = (
     'cementerio.proyectosmolina.com,'
+    'api-cementerio.proyectosmolina.com,'
     'proyectosmolina.com,'
     'www.proyectosmolina.com,'
+    '.onrender.com,'
+    '.vercel.app,'
     'localhost,'
     '127.0.0.1'
 )
@@ -213,6 +216,7 @@ DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 # ==============================================================================
 DEFAULT_CORS_ORIGINS = (
     'https://cementerio.proyectosmolina.com,'
+    'https://api-cementerio.proyectosmolina.com,'
     'https://proyectosmolina.com,'
     'https://www.proyectosmolina.com,'
     'http://localhost:5173,'
@@ -230,10 +234,21 @@ CORS_ALLOWED_ORIGINS = [
 ]
 CORS_ALLOW_CREDENTIALS = True
 
+DEFAULT_CSRF_TRUSTED_ORIGINS = (
+    'https://cementerio.proyectosmolina.com,'
+    'https://api-cementerio.proyectosmolina.com,'
+    'https://proyectosmolina.com,'
+    'https://www.proyectosmolina.com,'
+    'https://*.onrender.com,'
+    'https://*.vercel.app,'
+    'http://localhost:5173,'
+    'http://127.0.0.1:5173'
+)
+
 CSRF_TRUSTED_ORIGINS = [
     origin.strip() for origin in os.getenv(
         'CSRF_TRUSTED_ORIGINS',
-        DEFAULT_CORS_ORIGINS
+        DEFAULT_CSRF_TRUSTED_ORIGINS
     ).split(',') if origin.strip()
 ]
 
