@@ -7,6 +7,7 @@ de inhumaciones, registro biográfico de difuntos y anexos sanitarios/legales (R
 
 from django.db import models
 from django.core.exceptions import ValidationError
+from django.core.validators import FileExtensionValidator
 from django.conf import settings
 
 
@@ -138,11 +139,13 @@ class RegistroInhumacion(models.Model):
     )
     acta_renap_pdf = models.FileField(
         upload_to='inhumaciones/actas_renap/',
+        validators=[FileExtensionValidator(allowed_extensions=['pdf'])],
         verbose_name="Acta de Defunción RENAP (PDF)",
         help_text="Documento digitalizado del Acta de Defunción emitida por RENAP"
     )
     certificado_mspas_pdf = models.FileField(
         upload_to='inhumaciones/certificados_mspas/',
+        validators=[FileExtensionValidator(allowed_extensions=['pdf'])],
         null=True,
         blank=True,
         verbose_name="Certificado MSPAS (PDF)",

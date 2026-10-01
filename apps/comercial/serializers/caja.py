@@ -8,7 +8,7 @@ Define los serializadores para la gestión de ingresos en caja y desglose contab
 
 from rest_framework import serializers
 from django.db import transaction
-from django.db.models import Q
+from django.db.models import Q, Sum
 from datetime import date
 from decimal import Decimal
 
@@ -106,11 +106,11 @@ class ReciboPagoSerializer(serializers.ModelSerializer):
                     plan_cuota_especifica = item.get('plan_cuota')
                     if plan_cuota_especifica:
                         cuotas_a_procesar = contrato.plan_cuotas.filter(
-                            Q(pk=plan_cuota_especifica.pk) | Q(estado_cuota__in=['PENDIENTE', 'VENCIDA'])
+                            Q(pk=plan_cuota_especifica.pk) | Q(estado_cuota__in=['PENDIENTE', 'VENCIDA', 'PARCIAL'])
                         ).order_by('numero_cuota')
                     else:
                         cuotas_a_procesar = contrato.plan_cuotas.filter(
-                            estado_cuota__in=['PENDIENTE', 'VENCIDA']
+                            estado_cuota__in=['PENDIENTE', 'VENCIDA', 'PARCIAL']
                         ).order_by('numero_cuota')
 
                     monto_disponible = monto_item
@@ -122,8 +122,25 @@ class ReciboPagoSerializer(serializers.ModelSerializer):
                         if cuota.estado_cuota == 'PAGADA':
                             continue
 
-                        monto_cobertura = min(monto_disponible, cuota.monto_cuota)
-                        cuota.estado_cuota = 'PAGADA'
+                        total_pagado_previo = cuota.detalles_recibo.aggregate(
+                            total=Sum('monto_aplicado')
+                        )['total'] or Decimal('0.00')
+
+                        saldo_pendiente_cuota = max(Decimal('0.00'), cuota.monto_cuota - total_pagado_previo)
+                        if saldo_pendiente_cuota <= Decimal('0.00'):
+                            cuota.estado_cuota = 'PAGADA'
+                            cuota.save()
+                            continue
+
+                        monto_cobertura = min(monto_disponible, saldo_pendiente_cuota)
+                        nuevo_total_pagado = total_pagado_previo + monto_cobertura
+
+                        if nuevo_total_pagado >= cuota.monto_cuota:
+                            cuota.estado_cuota = 'PAGADA'
+                        elif nuevo_total_pagado > Decimal('0.00'):
+                            cuota.estado_cuota = 'PARCIAL'
+                        else:
+                            cuota.estado_cuota = 'PENDIENTE'
                         cuota.save()
 
                         DetallePagoRecibo.objects.create(
@@ -200,15 +217,35 @@ class ReciboPagoSerializer(serializers.ModelSerializer):
                     DetallePagoRecibo.objects.create(recibo=recibo, **item)
         else:
             cuotas_pendientes = contrato.plan_cuotas.filter(
-                estado_cuota__in=['PENDIENTE', 'VENCIDA']
+                estado_cuota__in=['PENDIENTE', 'VENCIDA', 'PARCIAL']
             ).order_by('numero_cuota')
 
             monto_disponible = Decimal(str(recibo.monto_ingresado))
             for cuota in cuotas_pendientes:
                 if monto_disponible <= Decimal('0.00'):
                     break
-                monto_cobertura = min(monto_disponible, cuota.monto_cuota)
-                cuota.estado_cuota = 'PAGADA'
+                if cuota.estado_cuota == 'PAGADA':
+                    continue
+
+                total_pagado_previo = cuota.detalles_recibo.aggregate(
+                    total=Sum('monto_aplicado')
+                )['total'] or Decimal('0.00')
+
+                saldo_pendiente_cuota = max(Decimal('0.00'), cuota.monto_cuota - total_pagado_previo)
+                if saldo_pendiente_cuota <= Decimal('0.00'):
+                    cuota.estado_cuota = 'PAGADA'
+                    cuota.save()
+                    continue
+
+                monto_cobertura = min(monto_disponible, saldo_pendiente_cuota)
+                nuevo_total_pagado = total_pagado_previo + monto_cobertura
+
+                if nuevo_total_pagado >= cuota.monto_cuota:
+                    cuota.estado_cuota = 'PAGADA'
+                elif nuevo_total_pagado > Decimal('0.00'):
+                    cuota.estado_cuota = 'PARCIAL'
+                else:
+                    cuota.estado_cuota = 'PENDIENTE'
                 cuota.save()
 
                 DetallePagoRecibo.objects.create(
@@ -223,7 +260,7 @@ class ReciboPagoSerializer(serializers.ModelSerializer):
         estado_liquidado = EstadoContrato.objects.filter(nombre_estado_contrato='Liquidado').first()
         if estado_liquidado:
             if contrato.modalidad.aplica_credito and contrato.plan_cuotas.count() > 0:
-                cuotas_pendientes = contrato.plan_cuotas.filter(estado_cuota__in=['PENDIENTE', 'VENCIDA']).count()
+                cuotas_pendientes = contrato.plan_cuotas.filter(estado_cuota__in=['PENDIENTE', 'VENCIDA', 'PARCIAL']).count()
                 enganche_pendiente = (contrato.monto_enganche > 0 and not DetallePagoRecibo.objects.filter(recibo__contrato=contrato, concepto='ENGANCHE').exists())
                 if cuotas_pendientes == 0 and not enganche_pendiente:
                     contrato.estado_contrato = estado_liquidado
@@ -263,30 +300,62 @@ class ReciboPagoSerializer(serializers.ModelSerializer):
         if monto_cambio:
             contrato = instance.contrato
 
-            # 1. Liberar cuotas y mantenimientos vinculados previamente a este recibo
-            for det in instance.detalles.all():
-                if det.plan_cuota:
-                    det.plan_cuota.estado_cuota = 'PENDIENTE'
-                    det.plan_cuota.save()
-                if det.control_mantenimiento:
-                    det.control_mantenimiento.estado_cobro = 'PENDIENTE'
-                    det.control_mantenimiento.fecha_pago_real = None
-                    det.control_mantenimiento.save()
+            # 1. Obtener cuotas y mantenimientos vinculados previamente a este recibo
+            cuotas_afectadas = list(set([det.plan_cuota for det in instance.detalles.all() if det.plan_cuota]))
+            mantes_afectados = list(set([det.control_mantenimiento for det in instance.detalles.all() if det.control_mantenimiento]))
 
             # 2. Eliminar los desgloses antiguos de este recibo
             instance.detalles.all().delete()
 
-            # 3. Aplicar el nuevo monto en cascada sobre cuotas impagas
+            # 3. Restaurar estado de cuotas afectadas según los pagos restantes
+            for cuota in cuotas_afectadas:
+                total_pagado = cuota.detalles_recibo.aggregate(
+                    total=Sum('monto_aplicado')
+                )['total'] or Decimal('0.00')
+                if total_pagado >= cuota.monto_cuota:
+                    cuota.estado_cuota = 'PAGADA'
+                elif total_pagado > Decimal('0.00'):
+                    cuota.estado_cuota = 'PARCIAL'
+                else:
+                    cuota.estado_cuota = 'PENDIENTE'
+                cuota.save()
+
+            for mante in mantes_afectados:
+                mante.estado_cobro = 'PENDIENTE'
+                mante.fecha_pago_real = None
+                mante.save()
+
+            # 4. Aplicar el nuevo monto en cascada sobre cuotas impagas
             cuotas_pendientes = contrato.plan_cuotas.filter(
-                estado_cuota__in=['PENDIENTE', 'VENCIDA']
+                estado_cuota__in=['PENDIENTE', 'VENCIDA', 'PARCIAL']
             ).order_by('numero_cuota')
 
             monto_disponible = Decimal(str(instance.monto_ingresado))
             for cuota in cuotas_pendientes:
                 if monto_disponible <= Decimal('0.00'):
                     break
-                monto_cobertura = min(monto_disponible, cuota.monto_cuota)
-                cuota.estado_cuota = 'PAGADA'
+                if cuota.estado_cuota == 'PAGADA':
+                    continue
+
+                total_pagado_previo = cuota.detalles_recibo.aggregate(
+                    total=Sum('monto_aplicado')
+                )['total'] or Decimal('0.00')
+
+                saldo_pendiente_cuota = max(Decimal('0.00'), cuota.monto_cuota - total_pagado_previo)
+                if saldo_pendiente_cuota <= Decimal('0.00'):
+                    cuota.estado_cuota = 'PAGADA'
+                    cuota.save()
+                    continue
+
+                monto_cobertura = min(monto_disponible, saldo_pendiente_cuota)
+                nuevo_total_pagado = total_pagado_previo + monto_cobertura
+
+                if nuevo_total_pagado >= cuota.monto_cuota:
+                    cuota.estado_cuota = 'PAGADA'
+                elif nuevo_total_pagado > Decimal('0.00'):
+                    cuota.estado_cuota = 'PARCIAL'
+                else:
+                    cuota.estado_cuota = 'PENDIENTE'
                 cuota.save()
 
                 DetallePagoRecibo.objects.create(
@@ -297,9 +366,9 @@ class ReciboPagoSerializer(serializers.ModelSerializer):
                 )
                 monto_disponible -= monto_cobertura
 
-            # 4. Actualizar el estado del contrato si cambió su estado de liquidación
+            # 5. Actualizar el estado del contrato si cambió su estado de liquidación
             if contrato.modalidad.aplica_credito and contrato.plan_cuotas.count() > 0:
-                pendientes = contrato.plan_cuotas.filter(estado_cuota__in=['PENDIENTE', 'VENCIDA']).count()
+                pendientes = contrato.plan_cuotas.filter(estado_cuota__in=['PENDIENTE', 'VENCIDA', 'PARCIAL']).count()
                 if pendientes == 0:
                     estado_liq = EstadoContrato.objects.filter(nombre_estado_contrato='Liquidado').first()
                     if estado_liq and contrato.estado_contrato != estado_liq:

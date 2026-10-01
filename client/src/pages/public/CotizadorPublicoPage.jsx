@@ -28,9 +28,11 @@ export const CotizadorPublicoPage = () => {
   const cargarCatalogo = async () => {
     try {
       const res = await getCatalogoEspaciosPublico();
-      setCatalogo(res.data || []);
+      const data = Array.isArray(res.data) ? res.data : (Array.isArray(res.data?.results) ? res.data.results : []);
+      setCatalogo(data);
     } catch (err) {
-      console.error(err);
+      console.error('Error al cargar catálogo:', err);
+      setCatalogo([]);
     }
   };
 
@@ -121,7 +123,7 @@ export const CotizadorPublicoPage = () => {
                 </h5>
 
                 {/* Selección Rápida por Espacio */}
-                {catalogo.length > 0 && (
+                {Array.isArray(catalogo) && catalogo.length > 0 && (
                   <div className="mb-4">
                     <label className="form-label text-secondary fw-semibold small">
                       Seleccionar Espacio del Catálogo:

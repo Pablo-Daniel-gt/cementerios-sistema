@@ -113,6 +113,22 @@ class RegistroInhumacionSerializer(serializers.ModelSerializer):
             return obj.usuario_registro.get_full_name() or obj.usuario_registro.username
         return ""
 
+    def validate_acta_renap_pdf(self, value):
+        if value and hasattr(value, 'name'):
+            if not value.name.lower().endswith('.pdf'):
+                raise serializers.ValidationError("Solo se permiten documentos en formato PDF (.pdf).")
+            if hasattr(value, 'size') and value.size > 10 * 1024 * 1024:
+                raise serializers.ValidationError("El tamaño del archivo PDF no debe exceder 10MB.")
+        return value
+
+    def validate_certificado_mspas_pdf(self, value):
+        if value and hasattr(value, 'name'):
+            if not value.name.lower().endswith('.pdf'):
+                raise serializers.ValidationError("Solo se permiten documentos en formato PDF (.pdf).")
+            if hasattr(value, 'size') and value.size > 10 * 1024 * 1024:
+                raise serializers.ValidationError("El tamaño del archivo PDF no debe exceder 10MB.")
+        return value
+
     def validate(self, attrs):
         espacio = attrs.get('espacio') or (self.instance.espacio if self.instance else None)
         contrato = attrs.get('contrato') or (self.instance.contrato if self.instance else None)

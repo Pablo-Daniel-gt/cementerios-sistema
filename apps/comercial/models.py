@@ -108,6 +108,7 @@ class Contrato(models.Model):
     numero_contrato = models.CharField(
         max_length=30,
         unique=True,
+        blank=True,
         verbose_name="Número de Contrato",
         help_text="Código único del contrato de venta (ej. CNT-2026-0001)"
     )
@@ -185,6 +186,13 @@ class Contrato(models.Model):
                 })
 
     def save(self, *args, **kwargs):
+        # Autogenerar número de contrato correlativo secuencial si no fue asignado
+        if not self.numero_contrato:
+            anio = date.today().year
+            prefijo = f"CNT-{anio}-"
+            ultimo = Contrato.objects.filter(numero_contrato__startswith=prefijo).count() + 1
+            self.numero_contrato = f"{prefijo}{ultimo:04d}"
+
         # Autocalcular saldo a financiar antes de guardar
         if self.monto_total is not None and self.monto_enganche is not None:
             self.monto_financiar = self.monto_total - self.monto_enganche

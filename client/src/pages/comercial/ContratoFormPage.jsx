@@ -30,7 +30,7 @@ export const ContratoFormPage = () => {
   const [boletaEnganche, setBoletaEnganche] = useState('');
 
   const [formData, setFormData] = useState({
-    numero_contrato: `CNT-${new Date().getFullYear()}-${Math.floor(1000 + Math.random() * 9000)}`,
+    numero_contrato: '',
     cliente: '',
     modalidad: '',
     estado_contrato: '',
@@ -213,7 +213,6 @@ export const ContratoFormPage = () => {
     try {
       const numEnganche = parseFloat(formData.monto_enganche || 0);
       const payload = {
-        numero_contrato: formData.numero_contrato,
         cliente: parseInt(formData.cliente, 10),
         modalidad: parseInt(formData.modalidad, 10),
         estado_contrato: parseInt(formData.estado_contrato, 10),
@@ -228,6 +227,10 @@ export const ContratoFormPage = () => {
         metodo_pago_enganche: metodoPagoEnganche,
         boleta_enganche: boletaEnganche || null
       };
+
+      if (formData.numero_contrato.trim()) {
+        payload.numero_contrato = formData.numero_contrato.trim();
+      }
 
       await createContrato(payload);
       toast.success('¡Contrato formalizado exitosamente! Los inmuebles fueron apartados.');
@@ -265,15 +268,16 @@ export const ContratoFormPage = () => {
             </div>
             <div className="card-body">
               <div className="mb-3">
-                <label className="form-label fw-bold">Número de Contrato (Único):</label>
+                <label className="form-label fw-bold">Número de Contrato:</label>
                 <input
                   type="text"
                   name="numero_contrato"
-                  className="form-control fw-bold text-primary"
+                  className="form-control fw-bold text-primary bg-light"
+                  placeholder="Autogenerado por el servidor (ej. CNT-2026-0001)"
                   value={formData.numero_contrato}
                   onChange={handleChange}
-                  required
                 />
+                <small className="text-muted">Si se deja vacío, el servidor asignará el correlativo oficial automáticamente.</small>
               </div>
 
               <div className="mb-3">

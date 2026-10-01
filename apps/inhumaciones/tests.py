@@ -300,3 +300,32 @@ class InhumacionesBackendTestCase(TestCase):
         self.assertIn("Roberto", item['nombre_completo'])
         self.assertIn("ubicacion", item)
         self.assertNotIn("contrato", item)  # Privacidad: No expone contratos ni datos sensibles
+
+    def test_privacidad_difuntos_e_inhumaciones_requiere_autenticacion(self):
+        """NEW-D-01: DifuntoViewSet y RegistroInhumacionViewSet exigen autenticación ante peticiones anónimas."""
+        anon_client = APIClient()
+
+        # 1. Petición anónima a difuntos
+        res_difunto = anon_client.get(reverse('difunto-list'))
+        self.assertEqual(res_difunto.status_code, status.HTTP_401_UNAUTHORIZED)
+
+        # 2. Petición anónima a registros de inhumación
+        res_inhumacion = anon_client.get(reverse('registro-inhumacion-list'))
+        self.assertEqual(res_inhumacion.status_code, status.HTTP_401_UNAUTHORIZED)
+
+    def test_validacion_archivo_solo_pdf(self):
+        """ARQ-09: Rechazo de archivos que no tengan extensión .pdf en documentos de defunción."""
+        fake_txt = SimpleUploadedFile("acta_invalida.txt", b"Contenido de texto no PDF", content_type="text/plain")
+        url = reverse('registro-inhumacion-list')
+        payload = {
+            "difunto": self.difunto.id,
+            "espacio": self.espacio1.id_espacio,
+            "contrato": self.contrato_activo.id_contrato,
+            "fecha_sepelio": "2026-09-01T10:00:00Z",
+            "acta_renap_pdf": fake_txt
+        }
+        response = self.client.post(url, payload, format='multipart')
+        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+        self.assertIn("pdf", str(response.data).lower())
+
+

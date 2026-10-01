@@ -56,6 +56,11 @@ class ContratoSerializer(serializers.ModelSerializer):
         queryset=Usuario.objects.all(),
         required=False
     )
+    numero_contrato = serializers.CharField(
+        required=False,
+        allow_blank=True,
+        help_text="Código único del contrato. Si se omite, se autogenera secuencialmente en el servidor."
+    )
     cliente_nombre = serializers.CharField(source='cliente.__str__', read_only=True)
     modalidad_nombre = serializers.CharField(source='modalidad.nombre_modalidad', read_only=True)
     estado_nombre = serializers.CharField(source='estado_contrato.nombre_estado_contrato', read_only=True)
@@ -144,11 +149,39 @@ class ContratoSerializer(serializers.ModelSerializer):
             return False
         return DetallePagoRecibo.objects.filter(recibo__contrato=obj, concepto='ENGANCHE').exists()
 
-    def validate_estado_contrato(self, value):
-        # Regla a: Al crear un contrato no se puede seleccionar el estado "Cancelado"
-        if self.instance is None and value and value.nombre_estado_contrato.lower() == 'cancelado':
-            raise serializers.ValidationError("No se puede crear un contrato directamente con el estado 'Cancelado'.")
-        return value
+    def validate(self, attrs):
+        # 1. Regla a: Al crear un contrato no se puede seleccionar el estado "Cancelado"
+        estado = attrs.get('estado_contrato')
+        if self.instance is None and estado and estado.nombre_estado_contrato.lower() == 'cancelado':
+            raise serializers.ValidationError({"estado_contrato": "No se puede crear un contrato directamente con el estado 'Cancelado'."})
+
+        # 2. NEW-C-04: Validación anti doble venta de espacios físicos
+        if self.instance is None:
+            espacios_ids = attrs.get('espacios_ids', [])
+            estructura_id = attrs.get('estructura_id', None)
+
+            if estructura_id:
+                espacios = EspacioFisico.objects.filter(estructura_id=estructura_id).select_related('estado')
+                if not espacios.exists():
+                    raise serializers.ValidationError({"estructura_id": "La estructura seleccionada no contiene nichos o espacios válidos."})
+                no_disponibles = espacios.exclude(estado__nombre_estado='Disponible')
+                if no_disponibles.exists():
+                    codigos = ", ".join([e.codigo_unico_espacio for e in no_disponibles[:5]])
+                    raise serializers.ValidationError({
+                        "estructura_id": f"La estructura seleccionada contiene nichos que ya no están disponibles: {codigos}."
+                    })
+            elif espacios_ids:
+                espacios = EspacioFisico.objects.filter(id_espacio__in=espacios_ids).select_related('estado')
+                if len(espacios) != len(espacios_ids):
+                    raise serializers.ValidationError({"espacios_ids": "Uno o más espacios seleccionados no existen en el sistema."})
+                no_disponibles = espacios.exclude(estado__nombre_estado='Disponible')
+                if no_disponibles.exists():
+                    codigos = ", ".join([e.codigo_unico_espacio for e in no_disponibles])
+                    raise serializers.ValidationError({
+                        "espacios_ids": f"Los siguientes espacios ya no están disponibles para venta: {codigos}."
+                    })
+
+        return attrs
 
     @transaction.atomic
     def create(self, validated_data):

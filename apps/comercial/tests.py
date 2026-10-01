@@ -250,6 +250,55 @@ class ComercialBackendTestCase(TestCase):
         self.assertEqual(resp_edit.status_code, status.HTTP_200_OK)
         self.assertEqual(contrato.plan_cuotas.filter(estado_cuota='PAGADA').count(), 1)
 
+    def test_pagos_parciales_caja(self):
+        """NEW-C-01: Si un cliente abona una fracción de su cuota, se marca como PARCIAL y no extingue la deuda."""
+        contrato = Contrato.objects.create(
+            numero_contrato="CNT-PARCIAL-001",
+            cliente=self.cliente,
+            usuario_asesor=self.user,
+            modalidad=self.modalidad_credito24,
+            estado_contrato=self.estado_activo,
+            monto_total=12000.00,
+            monto_enganche=2000.00,
+            monto_financiar=10000.00,
+            plazo_meses=2,
+            fecha_firma=date(2026, 1, 1),
+            fecha_inicio_pago=date(2026, 2, 1)
+        )
+        contrato.generar_plan_amortizacion()
+        # Cuota 1 = Q5000, Cuota 2 = Q5000
+
+        # 1. Pago parcial de Q1,000 para la cuota 1 de Q5,000
+        url_recibo = reverse('recibo-pago-list')
+        resp_parcial = self.client.post(url_recibo, {
+            "contrato": contrato.id_contrato,
+            "monto_ingresado": 1000.00,
+            "metodo_pago": "EFECTIVO"
+        }, format='json')
+        self.assertEqual(resp_parcial.status_code, status.HTTP_201_CREATED)
+
+        cuota1 = contrato.plan_cuotas.get(numero_cuota=1)
+        self.assertEqual(cuota1.estado_cuota, 'PARCIAL')
+        self.assertEqual(contrato.plan_cuotas.filter(estado_cuota='PAGADA').count(), 0)
+
+        # 2. Segundo pago de Q4,000 para saldar la cuota 1
+        resp_saldar = self.client.post(url_recibo, {
+            "contrato": contrato.id_contrato,
+            "monto_ingresado": 4000.00,
+            "metodo_pago": "EFECTIVO"
+        }, format='json')
+        self.assertEqual(resp_saldar.status_code, status.HTTP_201_CREATED)
+
+        cuota1.refresh_from_db()
+        self.assertEqual(cuota1.estado_cuota, 'PAGADA')
+        self.assertEqual(contrato.plan_cuotas.filter(estado_cuota='PAGADA').count(), 1)
+
+        # Cuota 2 debe seguir PENDIENTE
+        cuota2 = contrato.plan_cuotas.get(numero_cuota=2)
+        self.assertEqual(cuota2.estado_cuota, 'PENDIENTE')
+        contrato.refresh_from_db()
+        self.assertNotEqual(contrato.estado_contrato.nombre_estado_contrato, "Liquidado")
+
     def test_regla_a_no_crear_contrato_cancelado(self):
         """Regla a: No se permite seleccionar/crear un contrato directamente en estado Cancelado."""
         url = reverse('contrato-list')
@@ -370,4 +419,46 @@ class ComercialBackendTestCase(TestCase):
         # El estado del contrato se mantiene como Liquidado
         contrato.refresh_from_db()
         self.assertEqual(contrato.estado_contrato.nombre_estado_contrato, "Liquidado")
+
+    def test_autogeneracion_numero_contrato_servidor(self):
+        """ARQ-04: El servidor genera automáticamente el correlativo secuencial si no se provee número de contrato."""
+        url = reverse('contrato-list')
+        payload = {
+            "cliente": self.cliente.id,
+            "modalidad": self.modalidad_credito24.id_modalidad,
+            "estado_contrato": self.estado_solicitado.id_estado_contrato,
+            "monto_total": 24000.00,
+            "monto_enganche": 4000.00,
+            "plazo_meses": 24,
+            "fecha_firma": "2026-01-01",
+            "fecha_inicio_pago": "2026-02-01",
+            "espacios_ids": [self.espacio1.id_espacio]
+        }
+        resp = self.client.post(url, payload, format='json')
+        self.assertEqual(resp.status_code, status.HTTP_201_CREATED)
+        self.assertTrue(resp.data['numero_contrato'].startswith("CNT-"))
+
+    def test_validacion_anti_doble_venta_espacio(self):
+        """NEW-C-04: Rechazo al intentar crear un contrato con espacios que no estén en estado Disponible."""
+        # Cambiar el estado del espacio1 a Ocupado
+        estado_ocupado, _ = EstadoEspacio.objects.get_or_create(nombre_estado="Ocupado")
+        self.espacio1.estado = estado_ocupado
+        self.espacio1.save()
+
+        url = reverse('contrato-list')
+        payload = {
+            "cliente": self.cliente.id,
+            "modalidad": self.modalidad_credito24.id_modalidad,
+            "estado_contrato": self.estado_solicitado.id_estado_contrato,
+            "monto_total": 24000.00,
+            "monto_enganche": 4000.00,
+            "plazo_meses": 24,
+            "fecha_firma": "2026-01-01",
+            "fecha_inicio_pago": "2026-02-01",
+            "espacios_ids": [self.espacio1.id_espacio]
+        }
+        resp = self.client.post(url, payload, format='json')
+        self.assertEqual(resp.status_code, status.HTTP_400_BAD_REQUEST)
+        self.assertIn("no están disponibles", str(resp.data))
+
 

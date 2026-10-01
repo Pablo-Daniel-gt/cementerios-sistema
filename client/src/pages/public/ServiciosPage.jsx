@@ -15,9 +15,11 @@ export const ServiciosPage = () => {
     try {
       setLoading(true);
       const res = await getCatalogoEspaciosPublico();
-      setCatalogo(res.data || []);
+      const data = Array.isArray(res.data) ? res.data : (Array.isArray(res.data?.results) ? res.data.results : []);
+      setCatalogo(data);
     } catch (err) {
       console.error('Error al cargar servicios:', err);
+      setCatalogo([]);
     } finally {
       setLoading(false);
     }
@@ -46,6 +48,8 @@ export const ServiciosPage = () => {
     }
   ];
 
+  const listaCatalogo = Array.isArray(catalogo) ? catalogo : [];
+
   return (
     <div>
       {/* Header de Sección */}
@@ -71,61 +75,67 @@ export const ServiciosPage = () => {
             </div>
           ) : (
             <div className="row g-4">
-              {catalogo.map((item) => (
-                <div key={item.id} className="col-lg-6">
-                  <div className="card card-empathic p-4 h-100 border-0 shadow-sm d-flex flex-column bg-white">
-                    <div className="d-flex justify-content-between align-items-start mb-3">
-                      <div>
-                        <span className="badge bg-success-subtle text-success border border-success-subtle mb-1">
-                          {item.categoria}
-                        </span>
-                        <h4 className="fw-bold text-dark mb-0">{item.tipo}</h4>
-                      </div>
-                      <div className="p-3 bg-light rounded-circle text-success fs-3">
-                        <i className={`bi ${item.icono || 'bi-grid-3x3'}`}></i>
-                      </div>
-                    </div>
-
-                    <p className="text-muted small mb-3">{item.descripcion}</p>
-
-                    <h6 className="fw-bold text-secondary small text-uppercase mb-2" style={{ letterSpacing: '0.05em' }}>
-                      Características Incluidas:
-                    </h6>
-                    <ul className="list-unstyled mb-4 d-flex flex-column gap-1.5 small">
-                      {item.caracteristicas?.map((car, idx) => (
-                        <li key={idx} className="d-flex align-items-center gap-2 text-secondary">
-                          <i className="bi bi-check-circle-fill text-success fs-6"></i>
-                          <span>{car}</span>
-                        </li>
-                      ))}
-                    </ul>
-
-                    <div className="mt-auto pt-3 border-top d-flex flex-column flex-sm-row justify-content-between align-items-sm-center gap-3">
-                      <div>
-                        <div className="text-muted small">Inversión Base:</div>
-                        <div className="fs-4 fw-bold text-primary-custom">
-                          Q{Number(item.precio_base).toLocaleString('es-GT', { minimumFractionDigits: 2 })}
+              {listaCatalogo.length > 0 ? (
+                listaCatalogo.map((item) => (
+                  <div key={item.id} className="col-lg-6">
+                    <div className="card card-empathic p-4 h-100 border-0 shadow-sm d-flex flex-column bg-white">
+                      <div className="d-flex justify-content-between align-items-start mb-3">
+                        <div>
+                          <span className="badge bg-success-subtle text-success border border-success-subtle mb-1">
+                            {item.categoria}
+                          </span>
+                          <h4 className="fw-bold text-dark mb-0">{item.tipo}</h4>
                         </div>
-                        <div className="text-muted small">
-                          Cuotas desde <strong className="text-success">Q{Number(item.cuota_minima_mes).toFixed(2)} / mes</strong>
+                        <div className="p-3 bg-light rounded-circle text-success fs-3">
+                          <i className={`bi ${item.icono || 'bi-grid-3x3'}`}></i>
                         </div>
                       </div>
 
-                      <div className="d-flex flex-column gap-2">
-                        <button
-                          onClick={() => navigate('/cotizador-publico', { state: { monto: item.precio_base, tipo: item.tipo } })}
-                          className="btn btn-secondary-custom btn-sm px-4 fw-semibold"
-                        >
-                          <i className="bi bi-calculator me-1"></i> Cotizar Plan
-                        </button>
-                        <Link to="/contacto" className="btn btn-outline-secondary btn-sm text-center">
-                          Solicitar Asesoría
-                        </Link>
+                      <p className="text-muted small mb-3">{item.descripcion}</p>
+
+                      <h6 className="fw-bold text-secondary small text-uppercase mb-2" style={{ letterSpacing: '0.05em' }}>
+                        Características Incluidas:
+                      </h6>
+                      <ul className="list-unstyled mb-4 d-flex flex-column gap-1.5 small">
+                        {item.caracteristicas?.map((car, idx) => (
+                          <li key={idx} className="d-flex align-items-center gap-2 text-secondary">
+                            <i className="bi bi-check-circle-fill text-success fs-6"></i>
+                            <span>{car}</span>
+                          </li>
+                        ))}
+                      </ul>
+
+                      <div className="mt-auto pt-3 border-top d-flex flex-column flex-sm-row justify-content-between align-items-sm-center gap-3">
+                        <div>
+                          <div className="text-muted small">Inversión Base:</div>
+                          <div className="fs-4 fw-bold text-primary-custom">
+                            Q{Number(item.precio_base).toLocaleString('es-GT', { minimumFractionDigits: 2 })}
+                          </div>
+                          <div className="text-muted small">
+                            Cuotas desde <strong className="text-success">Q{Number(item.cuota_minima_mes).toFixed(2)} / mes</strong>
+                          </div>
+                        </div>
+
+                        <div className="d-flex flex-column gap-2">
+                          <button
+                            onClick={() => navigate('/cotizador-publico', { state: { monto: item.precio_base, tipo: item.tipo } })}
+                            className="btn btn-secondary-custom btn-sm px-4 fw-semibold"
+                          >
+                            <i className="bi bi-calculator me-1"></i> Cotizar Plan
+                          </button>
+                          <Link to="/contacto" className="btn btn-outline-secondary btn-sm text-center">
+                            Solicitar Asesoría
+                          </Link>
+                        </div>
                       </div>
                     </div>
                   </div>
+                ))
+              ) : (
+                <div className="col-12 text-center py-5">
+                  <p className="text-muted">No hay tipos de espacios disponibles en el catálogo en este momento.</p>
                 </div>
-              ))}
+              )}
             </div>
           )}
         </div>

@@ -23,9 +23,11 @@ export const HomePage = () => {
     try {
       setLoading(true);
       const res = await buscarMemorialPublico('');
-      setResultados(res.data || []);
+      const data = Array.isArray(res.data) ? res.data : (Array.isArray(res.data?.results) ? res.data.results : []);
+      setResultados(data);
     } catch (err) {
       console.error('Error al cargar registros públicos:', err);
+      setResultados([]);
     } finally {
       setLoading(false);
     }
@@ -34,9 +36,11 @@ export const HomePage = () => {
   const cargarCatalogo = async () => {
     try {
       const res = await getCatalogoEspaciosPublico();
-      setCatalogo(res.data || []);
+      const data = Array.isArray(res.data) ? res.data : (Array.isArray(res.data?.results) ? res.data.results : []);
+      setCatalogo(data);
     } catch (err) {
       console.error('Error al cargar catálogo:', err);
+      setCatalogo([]);
     }
   };
 
@@ -46,13 +50,15 @@ export const HomePage = () => {
       setLoading(true);
       setHasSearched(true);
       const res = await buscarMemorialPublico(query.trim());
-      setResultados(res.data || []);
-      if (res.data?.length === 0) {
+      const data = Array.isArray(res.data) ? res.data : (Array.isArray(res.data?.results) ? res.data.results : []);
+      setResultados(data);
+      if (data.length === 0) {
         toast.info('No se encontraron registros memoriales con ese criterio.');
       }
     } catch (err) {
       toast.error('Ocurrió un error al buscar en los registros memoriales.');
       console.error(err);
+      setResultados([]);
     } finally {
       setLoading(false);
     }
@@ -63,6 +69,9 @@ export const HomePage = () => {
     setHasSearched(false);
     cargarRegistrosIniciales();
   };
+
+  const listaResultados = Array.isArray(resultados) ? resultados : [];
+  const listaCatalogo = Array.isArray(catalogo) ? catalogo : [];
 
   return (
     <div>
@@ -139,7 +148,7 @@ export const HomePage = () => {
               <div className="d-flex align-items-center justify-content-between mb-3 pb-2 border-bottom">
                 <h5 className="fw-bold text-dark mb-0 d-flex align-items-center gap-2">
                   <i className="bi bi-person-badge-fill text-success fs-4"></i>
-                  {hasSearched ? 'Registros Coincidentes' : 'Registros Memoriales Recientes'} ({resultados.length})
+                  {hasSearched ? 'Registros Coincidentes' : 'Registros Memoriales Recientes'} ({listaResultados.length})
                 </h5>
                 {hasSearched && (
                   <button className="btn btn-sm btn-outline-secondary" onClick={handleLimpiar}>
@@ -153,12 +162,16 @@ export const HomePage = () => {
                   <div className="spinner-border text-success mx-auto mb-3" role="status"></div>
                   <p className="text-muted mb-0">Consultando registros en la base de datos...</p>
                 </div>
-              ) : resultados.length === 0 ? (
+              ) : listaResultados.length === 0 ? (
                 <div className="card p-5 text-center border-0 shadow-sm text-muted rounded-4 bg-white">
                   <i className="bi bi-folder-x fs-1 text-secondary mb-3"></i>
                   <h6 className="fw-bold text-dark">No se encontraron registros memoriales</h6>
                   <p className="small mb-3 text-muted">
-                    No hubo coincidencias con el término <strong>"{query}"</strong>. Verifique la ortografía o comuníquese a nuestras oficinas para asistencia personalizada.
+                    {hasSearched ? (
+                      <>No hubo coincidencias con el término <strong>"{query}"</strong>. Verifique la ortografía o comuníquese a nuestras oficinas para asistencia personalizada.</>
+                    ) : (
+                      <>No hay registros memoriales disponibles para mostrar en este momento.</>
+                    )}
                   </p>
                   <Link to="/contacto" className="btn btn-outline-primary btn-sm align-self-center">
                     <i className="bi bi-headset me-1"></i> Contactar Asesoría
@@ -166,7 +179,7 @@ export const HomePage = () => {
                 </div>
               ) : (
                 <div className="row g-3">
-                  {resultados.map((item) => (
+                  {listaResultados.map((item) => (
                     <div key={item.id} className="col-md-6">
                       <div className="card card-empathic p-3.5 h-100 border-start border-4 border-success d-flex flex-column">
                         <div className="d-flex justify-content-between align-items-start mb-2">
@@ -264,40 +277,46 @@ export const HomePage = () => {
           </div>
 
           <div className="row g-4">
-            {catalogo.slice(0, 3).map((item) => (
-              <div key={item.id} className="col-lg-4 col-md-6">
-                <div className="card card-empathic h-100 p-4 d-flex flex-column border-0 shadow-sm">
-                  <div className="d-flex justify-content-between align-items-center mb-3">
-                    <span className="badge bg-success-subtle text-success border border-success-subtle">
-                      {item.badge || item.categoria}
-                    </span>
-                    <span className="text-muted small">
-                      <i className="bi bi-person-fill me-1"></i> {item.capacidad}
-                    </span>
-                  </div>
-
-                  <h5 className="fw-bold text-dark mb-2">{item.tipo}</h5>
-                  <p className="text-muted small mb-3">{item.descripcion}</p>
-
-                  <div className="bg-light p-3 rounded-3 mb-4 mt-auto">
-                    <div className="text-muted small">Precio base desde:</div>
-                    <div className="fs-4 fw-bold text-success">
-                      Q{Number(item.precio_base).toLocaleString('es-GT', { minimumFractionDigits: 2 })}
+            {listaCatalogo.length > 0 ? (
+              listaCatalogo.slice(0, 3).map((item) => (
+                <div key={item.id} className="col-lg-4 col-md-6">
+                  <div className="card card-empathic h-100 p-4 d-flex flex-column border-0 shadow-sm">
+                    <div className="d-flex justify-content-between align-items-center mb-3">
+                      <span className="badge bg-success-subtle text-success border border-success-subtle">
+                        {item.badge || item.categoria}
+                      </span>
+                      <span className="text-muted small">
+                        <i className="bi bi-person-fill me-1"></i> {item.capacidad}
+                      </span>
                     </div>
-                    <div className="text-muted small">
-                      Cuotas estimadas desde <strong className="text-dark">Q{Number(item.cuota_minima_mes).toFixed(2)}/mes</strong>
-                    </div>
-                  </div>
 
-                  <button
-                    onClick={() => navigate('/cotizador-publico', { state: { monto: item.precio_base, tipo: item.tipo } })}
-                    className="btn btn-outline-primary w-100 fw-semibold btn-sm"
-                  >
-                    Cotizar este Espacio
-                  </button>
+                    <h5 className="fw-bold text-dark mb-2">{item.tipo}</h5>
+                    <p className="text-muted small mb-3">{item.descripcion}</p>
+
+                    <div className="bg-light p-3 rounded-3 mb-4 mt-auto">
+                      <div className="text-muted small">Precio base desde:</div>
+                      <div className="fs-4 fw-bold text-success">
+                        Q{Number(item.precio_base).toLocaleString('es-GT', { minimumFractionDigits: 2 })}
+                      </div>
+                      <div className="text-muted small">
+                        Cuotas estimadas desde <strong className="text-dark">Q{Number(item.cuota_minima_mes).toFixed(2)}/mes</strong>
+                      </div>
+                    </div>
+
+                    <button
+                      onClick={() => navigate('/cotizador-publico', { state: { monto: item.precio_base, tipo: item.tipo } })}
+                      className="btn btn-outline-primary w-100 fw-semibold btn-sm"
+                    >
+                      Cotizar este Espacio
+                    </button>
+                  </div>
                 </div>
+              ))
+            ) : (
+              <div className="col-12 text-center text-muted py-4">
+                <p className="small mb-0">Consulte nuestros servicios memoriales disponibles o contacte a un asesor.</p>
               </div>
-            ))}
+            )}
           </div>
 
           <div className="text-center mt-4">

@@ -101,7 +101,7 @@ class DifuntoViewSet(viewsets.ModelViewSet):
     """
     queryset = Difunto.objects.all().order_by('-id')
     serializer_class = DifuntoSerializer
-    permission_classes = [permissions.IsAuthenticatedOrReadOnly]
+    permission_classes = [permissions.IsAuthenticated]
 
     def get_queryset(self):
         qs = super().get_queryset()
@@ -136,7 +136,7 @@ class RegistroInhumacionViewSet(viewsets.ModelViewSet):
         'usuario_registro'
     ).order_by('-fecha_sepelio')
     serializer_class = RegistroInhumacionSerializer
-    permission_classes = [permissions.IsAuthenticatedOrReadOnly]
+    permission_classes = [permissions.IsAuthenticated]
     parser_classes = [MultiPartParser, FormParser, JSONParser]
 
     def get_queryset(self):

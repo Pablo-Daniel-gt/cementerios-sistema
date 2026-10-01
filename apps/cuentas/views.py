@@ -72,9 +72,9 @@ class ClienteViewSet(viewsets.ModelViewSet):
 # ==============================================================================
 # 4. VIEWSET DE BITÁCORA DE AUDITORÍA
 # ==============================================================================
-class BitacoraViewSet(viewsets.ModelViewSet):
+class BitacoraViewSet(viewsets.ReadOnlyModelViewSet):
     """
-    ViewSet para consultar e interactuar con los registros de la Bitácora de Auditoría.
+    Garantiza que la bitácora sea de sólo lectura (GET list / GET retrieve).
     """
     queryset = Bitacora.objects.all().select_related('usuario').order_by('-fecha_hora')
     serializer_class = BitacoraSerializer
