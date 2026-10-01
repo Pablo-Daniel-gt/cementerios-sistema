@@ -34,10 +34,18 @@ if not SECRET_KEY:
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = os.getenv('DEBUG', 'False').lower() in ('true', '1', 't')
 
+DEFAULT_ALLOWED_HOSTS = (
+    'cementerio.proyectosmolina.com,'
+    'proyectosmolina.com,'
+    'www.proyectosmolina.com,'
+    'localhost,'
+    '127.0.0.1'
+)
+
 ALLOWED_HOSTS = [
     host.strip() for host in os.getenv(
         'ALLOWED_HOSTS',
-        '*' if DEBUG else 'localhost,127.0.0.1'
+        '*' if DEBUG else DEFAULT_ALLOWED_HOSTS
     ).split(',') if host.strip()
 ]
 
@@ -77,6 +85,7 @@ AUTH_USER_MODEL = 'cuentas.Usuario'
 MIDDLEWARE = [
     'corsheaders.middleware.CorsMiddleware',
     'django.middleware.security.SecurityMiddleware',
+    'whitenoise.middleware.WhiteNoiseMiddleware',
     'django.contrib.sessions.middleware.SessionMiddleware',
     'django.middleware.common.CommonMiddleware',
     'django.middleware.csrf.CsrfViewMiddleware',
@@ -177,8 +186,18 @@ USE_TZ = True
 # Static files (CSS, JavaScript, Images)
 # https://docs.djangoproject.com/en/5.2/howto/static-files/
 
-STATIC_URL = 'static/'
+STATIC_URL = '/static/'
 STATIC_ROOT = BASE_DIR / 'staticfiles'
+
+# WhiteNoise: Compresión y optimización de archivos estáticos en producción
+STORAGES = {
+    "default": {
+        "BACKEND": "django.core.files.storage.FileSystemStorage",
+    },
+    "staticfiles": {
+        "BACKEND": "whitenoise.storage.CompressedManifestStaticFilesStorage",
+    },
+}
 
 # Media files (Archivos subidos por usuarios: PDFs, Actas, Certificados)
 MEDIA_URL = '/media/'
@@ -192,11 +211,21 @@ DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 # ==============================================================================
 # CONFIGURACIÓN DE CORS & CSRF
 # ==============================================================================
+DEFAULT_CORS_ORIGINS = (
+    'https://cementerio.proyectosmolina.com,'
+    'https://proyectosmolina.com,'
+    'https://www.proyectosmolina.com,'
+    'http://localhost:5173,'
+    'http://127.0.0.1:5173,'
+    'http://localhost:3000,'
+    'http://127.0.0.1:3000'
+)
+
 CORS_ALLOW_ALL_ORIGINS = False   
 CORS_ALLOWED_ORIGINS = [
     origin.strip() for origin in os.getenv(
         'CORS_ALLOWED_ORIGINS',
-        'http://localhost:5173,http://127.0.0.1:5173,http://localhost:3000,http://127.0.0.1:3000'
+        DEFAULT_CORS_ORIGINS
     ).split(',') if origin.strip()
 ]
 CORS_ALLOW_CREDENTIALS = True
@@ -204,7 +233,7 @@ CORS_ALLOW_CREDENTIALS = True
 CSRF_TRUSTED_ORIGINS = [
     origin.strip() for origin in os.getenv(
         'CSRF_TRUSTED_ORIGINS',
-        'http://localhost:5173,http://127.0.0.1:5173,http://localhost:3000,http://127.0.0.1:3000'
+        DEFAULT_CORS_ORIGINS
     ).split(',') if origin.strip()
 ]
 

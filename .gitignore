@@ -14,6 +14,8 @@ __pycache__/
 *.sqlite3-journal
 # Archivos de medios subidos por usuarios (PDFs de RENAP/DPI)
 media/
+# Archivos estáticos recopilados por collectstatic
+staticfiles/
 # Carpetas de editores e IDEs
 .vscode/
 .idea/

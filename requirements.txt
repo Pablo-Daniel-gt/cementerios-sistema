@@ -1,5 +1,10 @@
 # Framework Web Principal
 Django>=5.0,<6.0
+# Servidores WSGI / ASGI para Producción
+gunicorn>=22.0.0
+uvicorn>=0.30.0
+# Manejo de Archivos Estáticos en Producción
+whitenoise>=6.6.0
 # API REST Framework y CORS
 djangorestframework>=3.14.0
 django-cors-headers>=4.3.0
