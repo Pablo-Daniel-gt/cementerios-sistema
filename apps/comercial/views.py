@@ -122,7 +122,7 @@ class ContratoViewSet(viewsets.ModelViewSet):
 
         if not contrato.modalidad.aplica_credito:
             pagado_credito = Decimal('0.00')
-            saldo_credito_pendiente = Decimal('0.00')
+            saldo_credito_pendiente = max(Decimal('0.00'), Decimal(str(contrato.monto_total)) - Decimal(str(monto_enganche_efectivo)))
         else:
             saldo_credito_pendiente = max(Decimal('0.00'), Decimal(str(total_credito)) - Decimal(str(pagado_credito)))
 

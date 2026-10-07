@@ -461,4 +461,37 @@ class ComercialBackendTestCase(TestCase):
         self.assertEqual(resp.status_code, status.HTTP_400_BAD_REQUEST)
         self.assertIn("no están disponibles", str(resp.data))
 
+    def test_formalizar_contrato_contado_con_enganche_inicial(self):
+        """Valida que al formalizar un contrato al contado con enganche inicial, el saldo restante (monto_financiar) sea monto_total - monto_enganche."""
+        url = reverse('contrato-list')
+        payload = {
+            "cliente": self.cliente.id,
+            "modalidad": self.modalidad_contado.id_modalidad,
+            "estado_contrato": self.estado_activo.id_estado_contrato,
+            "monto_total": 15000.00,
+            "monto_enganche": 500.00,
+            "pago_enganche_inmediato": True,
+            "metodo_pago_enganche": "EFECTIVO",
+            "fecha_firma": "2026-01-01",
+            "fecha_inicio_pago": "2026-01-01",
+            "espacios_ids": [self.espacio1.id_espacio]
+        }
+        resp = self.client.post(url, payload, format='json')
+        self.assertEqual(resp.status_code, status.HTTP_201_CREATED)
+
+        contrato = Contrato.objects.get(pk=resp.data['id_contrato'])
+        self.assertEqual(contrato.monto_total, 15000.00)
+        self.assertEqual(contrato.monto_enganche, 500.00)
+        self.assertEqual(contrato.monto_financiar, 14500.00)
+        self.assertEqual(contrato.plazo_meses, 0)
+        self.assertEqual(contrato.estado_contrato.nombre_estado_contrato, "Activo")
+
+        # Verificar estado de cuenta
+        url_ec = reverse('contrato-estado-cuenta', kwargs={'pk': contrato.id_contrato})
+        resp_ec = self.client.get(url_ec)
+        self.assertEqual(resp_ec.status_code, status.HTTP_200_OK)
+        self.assertEqual(resp_ec.data['resumen_financiero']['monto_financiar'], 14500.00)
+        self.assertEqual(resp_ec.data['resumen_financiero']['saldo_credito_pendiente'], 14500.00)
+
+
 

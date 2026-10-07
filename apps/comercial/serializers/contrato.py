@@ -268,10 +268,10 @@ class ContratoSerializer(serializers.ModelSerializer):
             }
         )
 
-        # Regla c: Evaluar auto-liquidación de contrato para modalidad contado con enganche cancelado
+        # Regla c: Evaluar auto-liquidación de contrato para modalidad contado si el monto total fue 100% cubierto
         estado_liquidado = EstadoContrato.objects.filter(nombre_estado_contrato='Liquidado').first()
         if estado_liquidado:
-            if not contrato.modalidad.aplica_credito and pago_enganche_inmediato:
+            if not contrato.modalidad.aplica_credito and pago_enganche_inmediato and contrato.monto_financiar == Decimal('0.00'):
                 contrato.estado_contrato = estado_liquidado
                 contrato.save(update_fields=['estado_contrato'])
 

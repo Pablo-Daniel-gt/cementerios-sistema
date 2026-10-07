@@ -18,6 +18,7 @@ from django.core.validators import MinValueValidator
 from django.core.exceptions import ValidationError
 from django.conf import settings
 from datetime import date
+from decimal import Decimal
 from dateutil.relativedelta import relativedelta
 
 
@@ -193,13 +194,12 @@ class Contrato(models.Model):
             ultimo = Contrato.objects.filter(numero_contrato__startswith=prefijo).count() + 1
             self.numero_contrato = f"{prefijo}{ultimo:04d}"
 
-        # Autocalcular saldo a financiar antes de guardar
+        # Autocalcular saldo a financiar/restante antes de guardar (aplica a crédito y contado)
         if self.monto_total is not None and self.monto_enganche is not None:
-            self.monto_financiar = self.monto_total - self.monto_enganche
+            self.monto_financiar = max(Decimal('0.00'), self.monto_total - self.monto_enganche)
 
-        # Si la modalidad es Contado (aplica_credito == False), forzar plazo a 0 y financiar a 0
+        # Si la modalidad es Contado (aplica_credito == False), forzar plazo a 0
         if self.modalidad_id and not self.modalidad.aplica_credito:
-            self.monto_financiar = 0
             self.plazo_meses = 0
 
         self.full_clean()

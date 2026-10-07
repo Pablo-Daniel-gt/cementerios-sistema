@@ -266,8 +266,13 @@ class ReciboPagoSerializer(serializers.ModelSerializer):
                     contrato.estado_contrato = estado_liquidado
                     contrato.save(update_fields=['estado_contrato'])
             elif not contrato.modalidad.aplica_credito:
-                contrato.estado_contrato = estado_liquidado
-                contrato.save(update_fields=['estado_contrato'])
+                total_pagado_inmueble = DetallePagoRecibo.objects.filter(
+                    recibo__contrato=contrato,
+                    concepto='ENGANCHE'
+                ).aggregate(Sum('monto_aplicado'))['monto_aplicado__sum'] or Decimal('0.00')
+                if total_pagado_inmueble >= contrato.monto_total:
+                    contrato.estado_contrato = estado_liquidado
+                    contrato.save(update_fields=['estado_contrato'])
 
         # Bitácora
         Bitacora.objects.create(
