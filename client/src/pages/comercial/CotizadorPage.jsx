@@ -99,7 +99,7 @@ export const CotizadorPage = () => {
             Cotizador Financiero Automático
           </h2>
           <small className="text-muted">
-            Simulador de planes de amortización a plazos en Quetzales Guatemaltecos (Q00.00)
+            Simulador de planes Quetzales (Q00.00)
           </small>
         </div>
       </div>
@@ -189,7 +189,7 @@ export const CotizadorPage = () => {
             <div className="card shadow-sm border-0">
               <div className="card-header bg-dark text-white d-flex justify-content-between align-items-center py-3">
                 <h6 className="card-title mb-0 fw-bold">
-                  <i className="bi bi-table me-2"></i> Proyección de Amortización Proyectada
+                  <i className="bi bi-table me-2"></i> Proyección de cuotas
                 </h6>
                 <div className="d-flex gap-2">
                   <button

@@ -134,7 +134,7 @@ export const ClientesFormPage = () => {
               <div className="col-12 bg-light p-3 rounded border mb-2">
                 <label className="form-label fw-bold text-primary mb-1">
                   <i className="bi bi-person-check me-2"></i>
-                  Cuenta de Usuario del Sistema (Rol: Cliente Propietario)
+                  Cuenta de Usuario del Sistema
                 </label>
                 <select
                   className="form-select border-primary"

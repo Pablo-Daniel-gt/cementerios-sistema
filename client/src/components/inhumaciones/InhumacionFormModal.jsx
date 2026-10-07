@@ -161,7 +161,7 @@ export const InhumacionFormModal = ({ difuntoPreseleccionado, onClose, onSuccess
 
                 {/* 2. Contrato Comercial Autorizante */}
                 <div className="mb-3">
-                  <label className="form-label fw-bold text-dark">2. Contrato Comercial Habilitante * (RF-05 Solvencia)</label>
+                  <label className="form-label fw-bold text-dark">2. Contrato Comercial Habilitante</label>
                   <select
                     className="form-select"
                     value={selectedContratoId}
@@ -250,7 +250,7 @@ export const InhumacionFormModal = ({ difuntoPreseleccionado, onClose, onSuccess
                   <div className="card-header bg-secondary bg-opacity-10 py-2">
                     <h6 className="fw-bold mb-0 text-dark">
                       <i className="bi bi-file-earmark-pdf-fill text-danger me-2"></i>
-                      Documentos Sanitarios y Legales Anexos (RF-04)
+                      Documentos Sanitarios y Legales Anexos
                     </h6>
                   </div>
                   <div className="card-body">

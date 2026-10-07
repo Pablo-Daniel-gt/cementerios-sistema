@@ -34,8 +34,8 @@ export const ContratoFormPage = () => {
     cliente: '',
     modalidad: '',
     estado_contrato: '',
-    monto_total: statePrev.monto_total || '24000',
-    monto_enganche: statePrev.monto_enganche || '4000',
+    monto_total: statePrev.monto_total || '0',
+    monto_enganche: statePrev.monto_enganche || '500',
     plazo_meses: statePrev.plazo_meses || '24',
     fecha_firma: new Date().toISOString().split('T')[0],
     fecha_inicio_pago: new Date().toISOString().split('T')[0]
@@ -273,11 +273,11 @@ export const ContratoFormPage = () => {
                   type="text"
                   name="numero_contrato"
                   className="form-control fw-bold text-primary bg-light"
-                  placeholder="Autogenerado por el servidor (ej. CNT-2026-0001)"
+                  placeholder="(ej. CNT-2026-0001)"
                   value={formData.numero_contrato}
                   onChange={handleChange}
                 />
-                <small className="text-muted">Si se deja vacío, el servidor asignará el correlativo oficial automáticamente.</small>
+                <small className="text-muted">Si se deja vacío, el sistema generará uno automáticamente.</small>
               </div>
 
               <div className="mb-3">
