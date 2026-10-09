@@ -155,7 +155,6 @@ export const InhumacionesListPage = () => {
               <table className="table table-hover align-middle mb-0">
                 <thead className="table-dark">
                   <tr>
-                    <th>No. Sepelio</th>
                     <th>Persona Fallecida</th>
                     <th>Nicho Asignado</th>
                     <th>No. Contrato</th>
@@ -173,7 +172,6 @@ export const InhumacionesListPage = () => {
 
                     return (
                       <tr key={r.id}>
-                        <td className="fw-bold text-success">#{r.id}</td>
                         <td>
                           <div className="fw-bold text-dark">{nombreDifunto}</div>
                           <small className="text-muted">
