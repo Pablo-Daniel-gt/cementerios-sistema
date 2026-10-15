@@ -57,3 +57,6 @@ export const descargarReciboPDF = (id) =>
 // 6. Alertas de Cobranza y Mora (RF-06)
 export const getAlertasMora = () =>
   api.get('comercial/alertas-mora/');
+
+export const descargarReporteMorososPDF = () =>
+  api.get('comercial/alertas-mora/reporte-pdf/', { responseType: 'blob' });

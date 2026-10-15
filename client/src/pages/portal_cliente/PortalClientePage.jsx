@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react';
 import { useAuth } from '../../context/AuthContext';
 import { obtenerMiCliente } from '../../api/cuentas.api';
 import { getContratos } from '../../api/comercial.api';
+import { getMisDifuntos } from '../../api/inhumaciones.api';
 import { EstadoCuentaModal } from '../../components/comercial/EstadoCuentaModal';
 import toast from 'react-hot-toast';
 
@@ -11,8 +12,10 @@ export const PortalClientePage = () => {
   const { user } = useAuth();
   const [clienteInfo, setClienteInfo] = useState(null);
   const [contratos, setContratos] = useState([]);
+  const [difuntos, setDifuntos] = useState([]);
   const [loading, setLoading] = useState(true);
   const [loadingContratos, setLoadingContratos] = useState(false);
+  const [loadingDifuntos, setLoadingDifuntos] = useState(false);
   const [selectedContratoId, setSelectedContratoId] = useState(null);
   const [showModal, setShowModal] = useState(false);
 
@@ -27,13 +30,19 @@ export const PortalClientePage = () => {
 
         if (cliente?.id) {
           setLoadingContratos(true);
+          setLoadingDifuntos(true);
           try {
-            const resContratos = await getContratos({ cliente: cliente.id });
+            const [resContratos, resDifuntos] = await Promise.all([
+              getContratos({ cliente: cliente.id }),
+              getMisDifuntos()
+            ]);
             setContratos(resContratos.data || []);
-          } catch (errContratos) {
-            console.error('Error al cargar contratos del cliente:', errContratos);
+            setDifuntos(resDifuntos.data || []);
+          } catch (errDatos) {
+            console.error('Error al cargar datos del cliente:', errDatos);
           } finally {
             setLoadingContratos(false);
+            setLoadingDifuntos(false);
           }
         }
       } catch (err) {
@@ -205,6 +214,130 @@ export const PortalClientePage = () => {
                     <h6 className="fw-semibold">No tiene contratos comerciales registrados aún</h6>
                     <p className="small mb-0">
                       Cuando adquiera un derecho de uso o nicho en el camposanto, su contrato y plan de pagos aparecerán aquí automáticamente.
+                    </p>
+                  </div>
+                )}
+              </div>
+            </div>
+
+            {/* Listado de Difuntos en Nichos / Contratos (Módulo Familiar - Solo Lectura) */}
+            <div className="card border-0 shadow-sm mb-4">
+              <div className="card-header bg-white py-3 border-bottom d-flex justify-content-between align-items-center flex-wrap gap-2">
+                <div>
+                  <h5 className="fw-bold mb-0 text-dark">
+                    <i className="bi bi-people-fill me-2 text-primary"></i>
+                    Difuntos Registrados en Mis Nichos y Contratos
+                  </h5>
+                  <small className="text-muted">
+                    Consulta conmemorativa exclusiva de seres queridos inhumados bajo sus derechos de uso
+                  </small>
+                </div>
+                <div className="d-flex align-items-center gap-2">
+                  <span className="badge bg-secondary bg-opacity-10 text-secondary border">
+                    <i className="bi bi-eye me-1"></i> Modo Solo Lectura
+                  </span>
+                  <span className="badge bg-primary-subtle text-primary border border-primary-subtle">
+                    {difuntos.length} {difuntos.length === 1 ? 'Registro' : 'Registros'}
+                  </span>
+                  <Link
+                    to="/portal-cliente/difuntos"
+                    className="btn btn-outline-primary btn-sm d-flex align-items-center gap-1"
+                    title="Ver página completa de difuntos"
+                  >
+                    <i className="bi bi-box-arrow-up-right"></i>
+                    <span>Ver página completa</span>
+                  </Link>
+                </div>
+              </div>
+              <div className="card-body">
+                {loadingDifuntos ? (
+                  <div className="text-center py-4">
+                    <div className="spinner-border spinner-border-sm text-primary me-2" role="status"></div>
+                    <span className="text-muted">Cargando difuntos asociados a sus contratos...</span>
+                  </div>
+                ) : difuntos.length > 0 ? (
+                  <div className="d-flex flex-column gap-3">
+                    {difuntos.map((d) => (
+                      <div key={d.id_registro} className="card border border-light-subtle shadow-sm">
+                        <div className="card-header bg-light d-flex justify-content-between align-items-center py-2 flex-wrap gap-2">
+                          <div>
+                            <span className="fw-bold text-dark fs-6">
+                              <i className="bi bi-person-circle me-2 text-primary"></i>
+                              {d.nombre_completo}
+                            </span>
+                            <small className="text-muted ms-2">
+                              (DPI/CUI: <strong>{d.cui}</strong>)
+                            </small>
+                          </div>
+                          <div className="d-flex align-items-center gap-2">
+                            <span className={`badge ${d.estado_inhumacion === 'ACTIVA' ? 'bg-success' : 'bg-secondary'}`}>
+                              Inhumación {d.estado_inhumacion_display || d.estado_inhumacion}
+                            </span>
+                          </div>
+                        </div>
+                        <div className="card-body">
+                          <div className="row g-3">
+                            <div className="col-md-4">
+                              <small className="text-muted d-block">Ubicación / Nicho:</small>
+                              <strong className="text-primary d-block">
+                                <i className="bi bi-geo-alt-fill text-danger me-1"></i>
+                                Nicho {d.codigo_nicho}
+                              </strong>
+                              <small className="text-secondary">
+                                {d.sector_nombre} — {d.estructura_nombre} ({d.posicion})
+                              </small>
+                            </div>
+
+                            <div className="col-md-4">
+                              <small className="text-muted d-block">Fecha de Sepelio:</small>
+                              <strong className="text-dark d-block">
+                                <i className="bi bi-calendar-event me-1 text-info"></i>
+                                {d.fecha_sepelio}
+                              </strong>
+                              <small className="text-muted">
+                                Defunción: {d.fecha_defuncion}
+                              </small>
+                            </div>
+
+                            <div className="col-md-4">
+                              <small className="text-muted d-block">Contrato Titular Asociado:</small>
+                              <strong className="text-secondary d-block">
+                                <i className="bi bi-file-earmark-check me-1 text-success"></i>
+                                Contrato {d.numero_contrato}
+                              </strong>
+                              <small className="text-muted">
+                                Causa: {d.causa_muerte}
+                              </small>
+                            </div>
+                          </div>
+
+                          {d.observaciones && (
+                            <div className="mt-3 pt-2 border-top">
+                              <small className="text-muted d-block mb-1">Notas / Observaciones Oficiales:</small>
+                              <p className="small text-secondary mb-0 bg-light p-2 rounded border">
+                                {d.observaciones}
+                              </p>
+                            </div>
+                          )}
+                        </div>
+                        <div className="card-footer bg-white border-top py-2 d-flex justify-content-between align-items-center">
+                          <small className="text-muted" style={{ fontSize: '0.8rem' }}>
+                            <i className="bi bi-shield-check text-success me-1"></i>
+                            Registro de inhumación verificado legalmente ante RENAP y MSPAS
+                          </small>
+                          <small className="text-muted fst-italic" style={{ fontSize: '0.78rem' }}>
+                            Información confidencial de uso exclusivo del titular
+                          </small>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                ) : (
+                  <div className="text-center py-5 text-muted">
+                    <i className="bi bi-heart-pulse fs-1 text-secondary mb-2 d-block"></i>
+                    <h6 className="fw-semibold">No tiene difuntos registrados en sus nichos actualmente</h6>
+                    <p className="small mb-0">
+                      Cuando se realice una inhumación oficial en alguno de sus nichos o contratos, la información memorial aparecerá aquí de forma automática y privada para su consulta.
                     </p>
                   </div>
                 )}

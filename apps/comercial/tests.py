@@ -493,5 +493,33 @@ class ComercialBackendTestCase(TestCase):
         self.assertEqual(resp_ec.data['resumen_financiero']['monto_financiar'], 14500.00)
         self.assertEqual(resp_ec.data['resumen_financiero']['saldo_credito_pendiente'], 14500.00)
 
+    def test_formalizar_contrato_boleta_banco_requerida(self):
+        """Valida que si se cobra enganche por depósito o transferencia sin número de boleta, retorne HTTP 400 limpio y no 500."""
+        url = reverse('contrato-list')
+        payload = {
+            "cliente": self.cliente.id,
+            "modalidad": self.modalidad_credito24.id_modalidad,
+            "estado_contrato": self.estado_solicitado.id_estado_contrato,
+            "monto_total": 20000.00,
+            "monto_enganche": 1000.00,
+            "pago_enganche_inmediato": True,
+            "metodo_pago_enganche": "DEPOSITO_BANCO",
+            "boleta_enganche": "",  # Vaciado a propósito
+            "plazo_meses": 24,
+            "fecha_firma": "2026-01-01",
+            "fecha_inicio_pago": "2026-02-01",
+            "espacios_ids": [self.espacio1.id_espacio]
+        }
+        resp = self.client.post(url, payload, format='json')
+        self.assertEqual(resp.status_code, status.HTTP_400_BAD_REQUEST)
+        self.assertIn("boleta", str(resp.data).lower())
+
+    def test_reporte_morosos_pdf_generacion(self):
+        """Valida que el endpoint de informe de clientes morosos (>31 días) genere el documento PDF con HTTP 200."""
+        url = reverse('reporte-morosos-pdf')
+        resp = self.client.get(url)
+        self.assertEqual(resp.status_code, status.HTTP_200_OK)
+        self.assertEqual(resp['Content-Type'], 'application/pdf')
+
 
 

@@ -18,6 +18,7 @@ export const UsuariosFormPage = () => {
   const [todosClientes, setTodosClientes] = useState([]);
   const [clienteInicialId, setClienteInicialId] = useState(null);
   const [loading, setLoading] = useState(false);
+  const [showPassword, setShowPassword] = useState(false);
 
   const navigate = useNavigate();
   const { id } = useParams();
@@ -273,16 +274,27 @@ export const UsuariosFormPage = () => {
                 <label className="form-label fw-semibold">
                   Contraseña {isEditing ? '(Dejar en blanco para conservar)' : <span className="text-danger">*</span>}
                 </label>
-                <input
-                  type="password"
-                  className={`form-control ${errors.password ? 'is-invalid' : ''}`}
-                  placeholder="••••••••"
-                  {...register('password', {
-                    required: !isEditing ? 'La contraseña es obligatoria' : false,
-                    minLength: { value: 6, message: 'La contraseña debe tener al menos 6 caracteres' },
-                  })}
-                />
-                {errors.password && <div className="invalid-feedback">{errors.password.message}</div>}
+                <div className="input-group">
+                  <input
+                    type={showPassword ? 'text' : 'password'}
+                    className={`form-control ${errors.password ? 'is-invalid' : ''}`}
+                    placeholder="••••••••"
+                    {...register('password', {
+                      required: !isEditing ? 'La contraseña es obligatoria' : false,
+                      minLength: { value: 6, message: 'La contraseña debe tener al menos 6 caracteres' },
+                    })}
+                  />
+                  <button
+                    type="button"
+                    className="btn btn-outline-secondary"
+                    onClick={() => setShowPassword(!showPassword)}
+                    title={showPassword ? 'Ocultar contraseña' : 'Ver contraseña'}
+                    tabIndex={-1}
+                  >
+                    <i className={`bi ${showPassword ? 'bi-eye-slash' : 'bi-eye'}`}></i>
+                  </button>
+                </div>
+                {errors.password && <div className="invalid-feedback d-block">{errors.password.message}</div>}
               </div>
 
               {/* Nombres */}

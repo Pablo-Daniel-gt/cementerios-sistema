@@ -1,9 +1,11 @@
+import { useState } from 'react';
 import { useForm } from 'react-hook-form';
 import { useAuth } from '../context/AuthContext';
 import { useNavigate, Link } from 'react-router-dom';
 import toast from 'react-hot-toast';
 
 export const LoginPage = () => {
+  const [showPassword, setShowPassword] = useState(false);
   const { register, handleSubmit, formState: { errors } } = useForm();
   const { login, loading } = useAuth();
   const navigate = useNavigate();
@@ -57,11 +59,20 @@ export const LoginPage = () => {
               <div className="input-group">
                 <span className="input-group-text bg-light"><i className="bi bi-lock"></i></span>
                 <input
-                  type="password"
+                  type={showPassword ? 'text' : 'password'}
                   className={`form-control ${errors.password ? 'is-invalid' : ''}`}
                   placeholder="••••••••"
                   {...register('password', { required: 'La contraseña es obligatoria' })}
                 />
+                <button
+                  type="button"
+                  className="btn btn-outline-secondary"
+                  onClick={() => setShowPassword(!showPassword)}
+                  title={showPassword ? 'Ocultar contraseña' : 'Ver contraseña'}
+                  tabIndex={-1}
+                >
+                  <i className={`bi ${showPassword ? 'bi-eye-slash' : 'bi-eye'}`}></i>
+                </button>
               </div>
               {errors.password && (
                 <div className="invalid-feedback d-block">{errors.password.message}</div>

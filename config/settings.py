@@ -271,6 +271,7 @@ else:
     X_FRAME_OPTIONS = 'SAMEORIGIN'
 
 REST_FRAMEWORK = {
+    'EXCEPTION_HANDLER': 'config.exception_handler.custom_exception_handler',
     'DEFAULT_SCHEMA_CLASS': 'drf_spectacular.openapi.AutoSchema',  # Para la documentación de la API
     'DEFAULT_AUTHENTICATION_CLASSES': [
         'rest_framework.authentication.TokenAuthentication',

@@ -60,6 +60,7 @@ class EspacioFisicoSerializer(serializers.ModelSerializer):
     estado_nombre = serializers.ReadOnlyField(source='estado.nombre_estado')
     estructura_nombre = serializers.ReadOnlyField(source='estructura.nombre_estructura')
     en_contrato = serializers.SerializerMethodField()
+    tiene_inhumacion_activa = serializers.SerializerMethodField()
 
     posicion_fila = serializers.IntegerField(required=False, min_value=1)
     posicion_columna = serializers.IntegerField(required=False, min_value=1)
@@ -73,6 +74,9 @@ class EspacioFisicoSerializer(serializers.ModelSerializer):
 
     def get_en_contrato(self, obj):
         return hasattr(obj, 'detalle_contrato') and obj.detalle_contrato is not None
+
+    def get_tiene_inhumacion_activa(self, obj):
+        return obj.inhumaciones.filter(estado_inhumacion='ACTIVA').exists()
 
     def to_internal_value(self, data):
         data = data.copy()
@@ -92,6 +96,17 @@ class EspacioFisicoSerializer(serializers.ModelSerializer):
 
     def validate(self, attrs):
         if self.instance:
+            esta_ocupado = (self.instance.estado and self.instance.estado.nombre_estado == 'Ocupado') or self.instance.inhumaciones.filter(estado_inhumacion='ACTIVA').exists()
+
+            # Bloqueo total de edición técnica mientras el nicho se encuentre Ocupado
+            if esta_ocupado:
+                campos_bloqueados = ['precio_individual', 'material_construccion', 'dimensiones', 'posicion_fila', 'posicion_columna', 'estructura']
+                for campo in campos_bloqueados:
+                    if campo in attrs and attrs[campo] != getattr(self.instance, campo):
+                        raise serializers.ValidationError({
+                            campo: "No se puede editar la información de un nicho que se encuentra ocupado con una inhumación activa. Debe quedar desalojado antes de poder modificarse."
+                        })
+
             # Regla 1a: Bloqueo de cambio manual de estado si el nicho se encuentra Ocupado
             nuevo_estado = attrs.get('estado')
             if nuevo_estado and self.instance.estado and self.instance.estado.nombre_estado == 'Ocupado' and nuevo_estado != self.instance.estado:

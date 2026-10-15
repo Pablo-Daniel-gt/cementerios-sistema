@@ -7,7 +7,7 @@ Formatos de moneda vectorizados exclusivamente en Quetzales Guatemaltecos (Q00.0
 
 import io
 from datetime import date
-from reportlab.lib.pagesizes import letter
+from reportlab.lib.pagesizes import letter, landscape
 from reportlab.lib import colors
 from reportlab.platypus import SimpleDocTemplate, Paragraph, Spacer, Table, TableStyle, HRFlowable
 from reportlab.lib.styles import getSampleStyleSheet, ParagraphStyle
@@ -376,6 +376,232 @@ def generar_pdf_recibo(recibo):
         ('ALIGN', (0, 0), (-1, -1), 'CENTER'),
         ('VALIGN', (0, 0), (-1, -1), 'MIDDLE'),
         ('PADDING', (0, 0), (-1, -1), 2),
+    ]))
+    story.append(t_firmas)
+
+    doc.build(story)
+    buffer.seek(0)
+    return buffer
+
+
+def generar_pdf_reporte_morosos(datos_morosos, fecha_evaluacion=None):
+    """
+    Genera un informe formal en PDF de los clientes en estado de morosidad (> 31 días de atraso).
+    Excluye cartera preventiva (1 a 30 días) para enfocar las gestiones de cobranza operativa y legal.
+    Retorna un io.BytesIO con el archivo PDF en orientación horizontal (landscape).
+    """
+    if not fecha_evaluacion:
+        fecha_evaluacion = date.today().strftime("%d/%m/%Y")
+
+    buffer = io.BytesIO()
+    doc = SimpleDocTemplate(
+        buffer,
+        pagesize=landscape(letter),
+        rightMargin=36,
+        leftMargin=36,
+        topMargin=36,
+        bottomMargin=36
+    )
+
+    styles = getSampleStyleSheet()
+
+    titulo_style = ParagraphStyle(
+        'TituloReporteMorosos',
+        parent=styles['Heading1'],
+        fontSize=16,
+        leading=20,
+        textColor=colors.HexColor('#0F172A'),
+        fontName='Helvetica-Bold'
+    )
+
+    subtitulo_style = ParagraphStyle(
+        'SubTituloReporteMorosos',
+        parent=styles['Normal'],
+        fontSize=9,
+        leading=13,
+        textColor=colors.HexColor('#64748B')
+    )
+
+    badge_alerta = ParagraphStyle(
+        'BadgeAlerta',
+        parent=styles['Normal'],
+        fontSize=8,
+        leading=11,
+        textColor=colors.HexColor('#991B1B'),
+        fontName='Helvetica-Bold'
+    )
+
+    texto_th = ParagraphStyle(
+        'TextoTH',
+        parent=styles['Normal'],
+        fontSize=8,
+        leading=11,
+        textColor=colors.white,
+        fontName='Helvetica-Bold',
+        alignment=1
+    )
+
+    texto_td = ParagraphStyle(
+        'TextoTD',
+        parent=styles['Normal'],
+        fontSize=8,
+        leading=11,
+        textColor=colors.HexColor('#1E293B')
+    )
+
+    texto_td_center = ParagraphStyle(
+        'TextoTDCenter',
+        parent=texto_td,
+        alignment=1
+    )
+
+    texto_td_right = ParagraphStyle(
+        'TextoTDRight',
+        parent=texto_td,
+        alignment=2,
+        fontName='Helvetica-Bold'
+    )
+
+    texto_operativo = ParagraphStyle(
+        'TextoOperativo',
+        parent=texto_td_center,
+        textColor=colors.HexColor('#B45309'),
+        fontName='Helvetica-Bold'
+    )
+
+    texto_extrajudicial = ParagraphStyle(
+        'TextoExtrajudicial',
+        parent=texto_td_center,
+        textColor=colors.HexColor('#DC2626'),
+        fontName='Helvetica-Bold'
+    )
+
+    story = []
+
+    # 1. ENCABEZADO INSTITUCIONAL
+    encabezado_data = [
+        [
+            Paragraph("<b>CAMPOSANTO MEMORIAL — DEPARTAMENTO DE CRÉDITO Y COBRANZAS</b><br/>"
+                      "<b>INFORME OFICIAL DE CLIENTES EN ESTADO DE MOROSIDAD (> 31 DÍAS)</b><br/>"
+                      "<font size=8 color='#64748B'>Gestión de Cobranza Cartera Operativa (31-90 días) y Extrajudicial (>90 días)</font>", titulo_style),
+            Paragraph(f"<b>Fecha de Emisión:</b> {fecha_evaluacion}<br/>"
+                      f"<b>Criterio:</b> Atraso &gt; 31 Días<br/>"
+                      f"<b>Documento:</b> Confidencial / Cobranza", subtitulo_style)
+        ]
+    ]
+    t_enc = Table(encabezado_data, colWidths=[520, 200])
+    t_enc.setStyle(TableStyle([
+        ('VALIGN', (0, 0), (-1, -1), 'TOP'),
+        ('PADDING', (0, 0), (-1, -1), 0),
+    ]))
+    story.append(t_enc)
+    story.append(Spacer(1, 10))
+    story.append(HRFlowable(width="100%", thickness=1.5, color=colors.HexColor('#DC2626'), spaceBefore=2, spaceAfter=10))
+
+    # 2. CÁLCULO DE TOTALES Y MÉTRICAS
+    total_casos = len(datos_morosos)
+    clientes_unicos = len(set(d.get('cliente_nombre') for d in datos_morosos))
+    total_monto = sum(float(d.get('monto_vencido', 0)) for d in datos_morosos)
+    total_operativo = sum(1 for d in datos_morosos if 31 <= d.get('dias_atraso', 0) <= 90)
+    total_extrajudicial = sum(1 for d in datos_morosos if d.get('dias_atraso', 0) > 90)
+
+    # 3. TABLA RESUMEN / KPIS
+    resumen_data = [
+        [
+            Paragraph("<b>Total Clientes en Mora:</b>", subtitulo_style),
+            Paragraph(f"<b>{clientes_unicos}</b>", texto_td),
+            Paragraph("<b>Casos Registrados:</b>", subtitulo_style),
+            Paragraph(f"<b>{total_casos}</b>", texto_td),
+            Paragraph("<b>Cobranza Operativa (31-90 d):</b>", subtitulo_style),
+            Paragraph(f"<b>{total_operativo}</b>", texto_operativo),
+            Paragraph("<b>Extrajudicial (>90 d):</b>", subtitulo_style),
+            Paragraph(f"<b>{total_extrajudicial}</b>", texto_extrajudicial),
+            Paragraph("<b>Deuda Total Vencida:</b>", subtitulo_style),
+            Paragraph(f"<b>Q{total_monto:,.2f}</b>", texto_td_right)
+        ]
+    ]
+    t_res = Table(resumen_data, colWidths=[105, 35, 90, 35, 120, 35, 95, 35, 95, 75])
+    t_res.setStyle(TableStyle([
+        ('BACKGROUND', (0, 0), (-1, -1), colors.HexColor('#FEF2F2')),
+        ('BOX', (0, 0), (-1, -1), 1, colors.HexColor('#FCA5A5')),
+        ('INNERGRID', (0, 0), (-1, -1), 0.5, colors.HexColor('#FECACA')),
+        ('PADDING', (0, 0), (-1, -1), 4),
+        ('VALIGN', (0, 0), (-1, -1), 'MIDDLE'),
+    ]))
+    story.append(t_res)
+    story.append(Spacer(1, 10))
+
+    # 4. TABLA DETALLADA DE MOROSIDAD
+    if total_casos == 0:
+        vacio_data = [
+            [Paragraph("<b>No se encontraron clientes con mora superior a 31 días a la fecha.</b> Toda la cartera comercial se encuentra al día o en plazo preventivo.", texto_td_center)]
+        ]
+        t_vacio = Table(vacio_data, colWidths=[720])
+        t_vacio.setStyle(TableStyle([
+            ('BACKGROUND', (0, 0), (-1, -1), colors.HexColor('#F0FDF4')),
+            ('BOX', (0, 0), (-1, -1), 1, colors.HexColor('#86EFAC')),
+            ('PADDING', (0, 0), (-1, -1), 15),
+            ('ALIGN', (0, 0), (-1, -1), 'CENTER'),
+        ]))
+        story.append(t_vacio)
+    else:
+        filas_tabla = [
+            [
+                Paragraph("<b>Cliente / Titular</b>", texto_th),
+                Paragraph("<b>Teléfono / Contacto</b>", texto_th),
+                Paragraph("<b>Contrato</b>", texto_th),
+                Paragraph("<b>Concepto de Deuda Vencida</b>", texto_th),
+                Paragraph("<b>Días Atraso</b>", texto_th),
+                Paragraph("<b>Monto Vencido</b>", texto_th),
+                Paragraph("<b>Nivel Gestión</b>", texto_th),
+            ]
+        ]
+
+        # Ordenar por días de atraso descendente
+        datos_ordenados = sorted(datos_morosos, key=lambda x: x.get('dias_atraso', 0), reverse=True)
+
+        for d in datos_ordenados:
+            dias = d.get('dias_atraso', 0)
+            monto = float(d.get('monto_vencido', 0))
+            es_extra = dias > 90
+            est_nivel = texto_extrajudicial if es_extra else texto_operativo
+            txt_nivel = "EXTRAJUDICIAL" if es_extra else "OPERATIVO"
+
+            filas_tabla.append([
+                Paragraph(f"<b>{d.get('cliente_nombre', 'N/A')}</b>", texto_td),
+                Paragraph(str(d.get('cliente_telefono', 'N/A')), texto_td_center),
+                Paragraph(str(d.get('numero_contrato', 'N/A')), texto_td_center),
+                Paragraph(str(d.get('motivo_mora', 'N/A')), texto_td),
+                Paragraph(f"<b>{dias} d</b>", texto_td_center),
+                Paragraph(f"Q{monto:,.2f}", texto_td_right),
+                Paragraph(txt_nivel, est_nivel),
+            ])
+
+        t_detalles = Table(filas_tabla, colWidths=[150, 90, 80, 170, 60, 85, 85])
+        t_detalles.setStyle(TableStyle([
+            ('BACKGROUND', (0, 0), (-1, 0), colors.HexColor('#991B1B')),
+            ('ALIGN', (0, 0), (-1, 0), 'CENTER'),
+            ('VALIGN', (0, 0), (-1, -1), 'MIDDLE'),
+            ('ROWBACKGROUNDS', (0, 1), (-1, -1), [colors.white, colors.HexColor('#F8FAFC')]),
+            ('GRID', (0, 0), (-1, -1), 0.5, colors.HexColor('#E2E8F0')),
+            ('PADDING', (0, 0), (-1, -1), 4),
+        ]))
+        story.append(t_detalles)
+
+    story.append(Spacer(1, 18))
+
+    # 5. FIRMAS DE RESPONSABILIDAD
+    firmas_data = [
+        [
+            Paragraph("________________________________________<br/><b>Lic. Encargado de Crédito y Cobranza</b><br/>Gestión y Seguimiento Telefónico / Domiciliar", texto_td_center),
+            Paragraph("________________________________________<br/><b>Gerencia General / Dirección Administrativa</b><br/>Autorización de Expedientes para Cobro", texto_td_center)
+        ]
+    ]
+    t_firmas = Table(firmas_data, colWidths=[360, 360])
+    t_firmas.setStyle(TableStyle([
+        ('ALIGN', (0, 0), (-1, -1), 'CENTER'),
+        ('VALIGN', (0, 0), (-1, -1), 'MIDDLE'),
+        ('PADDING', (0, 0), (-1, -1), 4),
     ]))
     story.append(t_firmas)
 

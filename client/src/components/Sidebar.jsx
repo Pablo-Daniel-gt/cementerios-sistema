@@ -15,6 +15,7 @@ export const Sidebar = () => {
     comercial: true,
     operaciones: true,
     admin: true,
+    cliente: true,
   });
 
   const toggleSection = (sectionKey) => {
@@ -239,14 +240,39 @@ export const Sidebar = () => {
         )}
 
         {isClient && (
-          <NavLink
-            to="/portal-cliente"
-            className={({ isActive }) => `nav-link ${isActive ? 'active' : ''}`}
-            title="Mi Portal Cliente"
-          >
-            <i className="bi bi-person-workspace"></i>
-            <span className="links_name">Mi Portal Cliente</span>
-          </NavLink>
+          <>
+            <div
+              className={`section-header ${!openSections.cliente ? 'collapsed' : ''}`}
+              onClick={() => toggleSection('cliente')}
+              title="Mi Portal y Servicios"
+            >
+              <span className="links_name">Mi Portal</span>
+              <i className={`bi chevron-icon ${openSections.cliente ? 'bi-chevron-down' : 'bi-chevron-right'}`}></i>
+            </div>
+
+            {(openSections.cliente || isCollapsed) && (
+              <div className="section-collapse">
+                <NavLink
+                  to="/portal-cliente"
+                  end
+                  className={({ isActive }) => `nav-link ${isActive ? 'active' : ''}`}
+                  title="Mi Portal y Contratos"
+                >
+                  <i className="bi bi-person-workspace"></i>
+                  <span className="links_name">Mi Portal y Contratos</span>
+                </NavLink>
+
+                <NavLink
+                  to="/portal-cliente/difuntos"
+                  className={({ isActive }) => `nav-link ${isActive ? 'active' : ''}`}
+                  title="Mis Familiares Difuntos"
+                >
+                  <i className="bi bi-flower1"></i>
+                  <span className="links_name">Mis Difuntos</span>
+                </NavLink>
+              </div>
+            )}
+          </>
         )}
       </nav>
 

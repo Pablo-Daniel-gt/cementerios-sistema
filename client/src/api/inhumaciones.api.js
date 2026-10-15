@@ -71,3 +71,10 @@ export const eliminarRegistroInhumacion = (id) => {
 export const exhumarRegistro = (id, data) => {
   return axios.post(`inhumaciones/registros/${id}/exhumar/`, data);
 };
+
+// ==============================================================================
+// 3. CONSULTA SEGURA DE DIFUNTOS DEL CLIENTE AUTENTICADO (PORTAL CLIENTE)
+// ==============================================================================
+export const getMisDifuntos = () => {
+  return axios.get('inhumaciones/mis-difuntos/');
+};

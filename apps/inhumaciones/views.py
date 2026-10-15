@@ -19,7 +19,7 @@ from drf_spectacular.utils import extend_schema, OpenApiResponse
 from .models import Difunto, RegistroInhumacion
 from .serializers import DifuntoSerializer, RegistroInhumacionSerializer
 from apps.inventario.models import EstadoEspacio
-from apps.cuentas.models import Bitacora
+from apps.cuentas.models import Bitacora, Cliente
 
 
 # ==============================================================================
@@ -105,6 +105,17 @@ class DifuntoViewSet(viewsets.ModelViewSet):
 
     def get_queryset(self):
         qs = super().get_queryset()
+
+        # Restringir clientes para que únicamente visualicen difuntos en sus propios contratos
+        if self.request.user.is_authenticated and hasattr(self.request.user, 'rol') and self.request.user.rol:
+            if self.request.user.rol.nombre.lower() in ['cliente', 'cliente propietario']:
+                cliente = getattr(self.request.user, 'cliente_perfil', None)
+                if not cliente and self.request.user.email:
+                    cliente = Cliente.objects.filter(correo__iexact=self.request.user.email).first()
+                if cliente:
+                    return qs.filter(registro_inhumacion__contrato__cliente=cliente)
+                return qs.none()
+
         search = self.request.query_params.get('search', None)
         cui = self.request.query_params.get('cui', None)
 
@@ -118,6 +129,13 @@ class DifuntoViewSet(viewsets.ModelViewSet):
                 Q(causa_muerte__icontains=search)
             )
         return qs
+
+    def check_permissions(self, request):
+        super().check_permissions(request)
+        if request.method not in permissions.SAFE_METHODS:
+            if request.user.is_authenticated and hasattr(request.user, 'rol') and request.user.rol:
+                if request.user.rol.nombre.lower() in ['cliente', 'cliente propietario']:
+                    self.permission_denied(request, message="Los clientes tienen acceso de solo lectura y no pueden modificar datos.")
 
 
 # ==============================================================================
@@ -141,6 +159,17 @@ class RegistroInhumacionViewSet(viewsets.ModelViewSet):
 
     def get_queryset(self):
         qs = super().get_queryset()
+
+        # Restringir clientes para que únicamente visualicen inhumaciones en sus propios contratos
+        if self.request.user.is_authenticated and hasattr(self.request.user, 'rol') and self.request.user.rol:
+            if self.request.user.rol.nombre.lower() in ['cliente', 'cliente propietario']:
+                cliente = getattr(self.request.user, 'cliente_perfil', None)
+                if not cliente and self.request.user.email:
+                    cliente = Cliente.objects.filter(correo__iexact=self.request.user.email).first()
+                if cliente:
+                    return qs.filter(contrato__cliente=cliente)
+                return qs.none()
+
         estado = self.request.query_params.get('estado', None)
         espacio = self.request.query_params.get('espacio', None)
         contrato = self.request.query_params.get('contrato', None)
@@ -161,6 +190,13 @@ class RegistroInhumacionViewSet(viewsets.ModelViewSet):
                 Q(contrato__numero_contrato__icontains=search)
             )
         return qs
+
+    def check_permissions(self, request):
+        super().check_permissions(request)
+        if request.method not in permissions.SAFE_METHODS:
+            if request.user.is_authenticated and hasattr(request.user, 'rol') and request.user.rol:
+                if request.user.rol.nombre.lower() in ['cliente', 'cliente propietario']:
+                    self.permission_denied(request, message="Los clientes tienen acceso de solo lectura y no pueden modificar datos.")
 
     @extend_schema(
         summary="Procesar Exhumación o Traslado de Difunto",
@@ -220,3 +256,74 @@ class RegistroInhumacionViewSet(viewsets.ModelViewSet):
             'message': f"Exhumación/Traslado procesado exitosamente. El espacio '{espacio.codigo_unico_espacio}' ha pasado a estado 'Reservado' (mantiene titularidad por contrato).",
             'registro': serializer.data
         }, status=status.HTTP_200_OK)
+
+
+# ==============================================================================
+# 3. VISTA PRIVADA DE DIFUNTOS ASOCIADOS AL CLIENTE AUTENTICADO (PORTAL CLIENTE)
+# ==============================================================================
+class MisDifuntosClienteView(APIView):
+    """
+    GET /api/v1/inhumaciones/mis-difuntos/
+    Retorna los difuntos que se encuentran en nichos o contratos del cliente en sesión.
+    Protege la privacidad asegurando que solo se listen registros legítimos de sus propiedades.
+    Acceso estrictamente de solo lectura.
+    """
+    permission_classes = [permissions.IsAuthenticated]
+
+    @extend_schema(
+        summary="Consultar Difuntos Asociados a Propiedades del Cliente en Sesión",
+        description="Retorna el listado de personas fallecidas inhumadas en los espacios y contratos pertenecientes al titular.",
+        responses={200: OpenApiResponse(description="Listado seguro de difuntos")}
+    )
+    def get(self, request):
+        user = request.user
+        if not user or user.is_anonymous:
+            return Response({'error': 'No autenticado'}, status=status.HTTP_401_UNAUTHORIZED)
+
+        cliente = getattr(user, 'cliente_perfil', None)
+        if not cliente and user.email:
+            cliente = Cliente.objects.filter(correo__iexact=user.email).first()
+
+        if not cliente:
+            return Response([], status=status.HTTP_200_OK)
+
+        registros = RegistroInhumacion.objects.filter(
+            contrato__cliente=cliente
+        ).select_related(
+            'difunto',
+            'espacio__estructura__sector',
+            'contrato'
+        ).order_by('-fecha_sepelio')
+
+        datos = []
+        for reg in registros:
+            esp = reg.espacio
+            sector_nom = esp.estructura.sector.nombre_sector if esp and esp.estructura and esp.estructura.sector else "Camposanto General"
+            estructura_nom = esp.estructura.nombre_estructura if esp and esp.estructura else "Estructura Principal"
+            codigo_nicho = esp.codigo_unico_espacio if esp else "N/A"
+            posicion_str = f"Fila {esp.posicion_fila}, Columna {esp.posicion_columna}" if esp else "N/A"
+
+            cui_raw = reg.difunto.cui or ""
+            datos.append({
+                'id_registro': reg.id,
+                'difunto_id': reg.difunto.id,
+                'nombre_completo': f"{reg.difunto.nombres} {reg.difunto.apellidos}".strip(),
+                'nombres': reg.difunto.nombres,
+                'apellidos': reg.difunto.apellidos,
+                'cui': cui_raw if cui_raw else "No registrado",
+                'fecha_nacimiento': reg.difunto.fecha_nacimiento.strftime('%d/%m/%Y') if reg.difunto.fecha_nacimiento else "No registrada",
+                'fecha_defuncion': reg.difunto.fecha_defuncion.strftime('%d/%m/%Y') if reg.difunto.fecha_defuncion else "No registrada",
+                'causa_muerte': reg.difunto.causa_muerte or "No especificada",
+                'lugar_defuncion': reg.difunto.lugar_defuncion or "No registrado",
+                'fecha_sepelio': reg.fecha_sepelio.strftime('%d/%m/%Y %H:%M') if reg.fecha_sepelio else "No registrada",
+                'estado_inhumacion': reg.estado_inhumacion,
+                'estado_inhumacion_display': reg.get_estado_inhumacion_display(),
+                'codigo_nicho': codigo_nicho,
+                'posicion': posicion_str,
+                'estructura_nombre': estructura_nom,
+                'sector_nombre': sector_nom,
+                'numero_contrato': reg.contrato.numero_contrato if reg.contrato else "N/A",
+                'observaciones': reg.observaciones or ""
+            })
+
+        return Response(datos, status=status.HTTP_200_OK)

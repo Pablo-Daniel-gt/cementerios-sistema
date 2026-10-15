@@ -23,7 +23,9 @@ export function NichoModal({ espacio, estados = [], onClose, onUpdate }) {
 
   const [modoEdicion, setModoEdicion] = useState(false);
 
-  const isDisponible = espacio.estado === 'Disponible';
+  const estadoNombre = espacio.estado_nombre || espacio.estado || '';
+  const isOcupado = estadoNombre.toLowerCase() === 'ocupado' || Boolean(espacio.tiene_inhumacion_activa);
+  const isDisponible = estadoNombre.toLowerCase() === 'disponible';
   const colorHex = getEstadoColor(espacio.estado);
 
   useEffect(() => {
@@ -32,12 +34,17 @@ export function NichoModal({ espacio, estados = [], onClose, onUpdate }) {
       setPrecioIndividual(espacio.precio_individual || '');
       setMaterialConstruccion(espacio.material_construccion || 'Concreto Reforzado');
       setDimensiones(espacio.dimensiones || '2.20m x 0.90m x 0.80m');
+      setModoEdicion(false);
     }
   }, [espacio]);
 
   // 1. Guardar Estado
   const handleGuardarEstado = async (e) => {
     e.preventDefault();
+    if (isOcupado) {
+      toast.error('No se puede cambiar el estado de un nicho ocupado sin exhumación.');
+      return;
+    }
     if (!nuevoEstadoId) {
       toast.error('Seleccione un estado válido.');
       return;
@@ -60,6 +67,10 @@ export function NichoModal({ espacio, estados = [], onClose, onUpdate }) {
   // 2. Guardar Datos Técnicos / Precio del Nicho (Módulo B - Punto 1)
   const handleGuardarDatosNicho = async (e) => {
     e.preventDefault();
+    if (isOcupado) {
+      toast.error('El nicho se encuentra ocupado con una inhumación activa y no puede ser editado.');
+      return;
+    }
     setLoadingEdicion(true);
     try {
       const datos = {
@@ -80,6 +91,11 @@ export function NichoModal({ espacio, estados = [], onClose, onUpdate }) {
 
   // 3. Eliminar Nicho (Módulo B - Punto 3)
   const handleEliminarNicho = async () => {
+    if (isOcupado) {
+      toast.error('No se puede eliminar un nicho ocupado con una inhumación activa. Debe ser desalojado primero.');
+      return;
+    }
+
     const confirm = window.confirm(`¿Está seguro de eliminar permanentemente el nicho ${espacio.codigo_unico_espacio}? Esta acción no se puede deshacer.`);
     if (!confirm) return;
 
@@ -179,10 +195,19 @@ export function NichoModal({ espacio, estados = [], onClose, onUpdate }) {
                       </div>
                       <button
                         type="button"
-                        className="btn btn-outline-primary btn-sm"
-                        onClick={() => setModoEdicion(true)}
+                        className={`btn btn-sm ${isOcupado ? 'btn-secondary opacity-75' : 'btn-outline-primary'}`}
+                        onClick={() => {
+                          if (isOcupado) {
+                            toast.error('No se puede editar un nicho ocupado con una inhumación activa.');
+                            return;
+                          }
+                          setModoEdicion(true);
+                        }}
+                        disabled={isOcupado}
+                        title={isOcupado ? "Edición deshabilitada: el nicho se encuentra ocupado con una inhumación activa" : "Editar precio y datos técnicos"}
                       >
-                        <i className="bi bi-pencil-square me-1"></i> Editar Precio / Datos
+                        <i className={`bi ${isOcupado ? 'bi-lock-fill' : 'bi-pencil-square'} me-1`}></i>
+                        {isOcupado ? 'Edición Bloqueada (Ocupado)' : 'Editar Precio / Datos'}
                       </button>
                     </div>
                   </div>
@@ -203,7 +228,7 @@ export function NichoModal({ espacio, estados = [], onClose, onUpdate }) {
                       value={precioIndividual}
                       onChange={(e) => setPrecioIndividual(e.target.value)}
                       placeholder="Ej. 15000.00"
-                      disabled={espacio.en_contrato}
+                      disabled={espacio.en_contrato || isOcupado}
                     />
                     {espacio.en_contrato && (
                       <small className="text-danger d-block mt-1 fw-semibold">
@@ -218,6 +243,7 @@ export function NichoModal({ espacio, estados = [], onClose, onUpdate }) {
                       className="form-control"
                       value={materialConstruccion}
                       onChange={(e) => setMaterialConstruccion(e.target.value)}
+                      disabled={isOcupado}
                     />
                   </div>
                   <div className="col-md-12">
@@ -227,6 +253,7 @@ export function NichoModal({ espacio, estados = [], onClose, onUpdate }) {
                       className="form-control"
                       value={dimensiones}
                       onChange={(e) => setDimensiones(e.target.value)}
+                      disabled={isOcupado}
                     />
                   </div>
                   <div className="col-12 d-flex justify-content-end gap-2">
@@ -237,7 +264,7 @@ export function NichoModal({ espacio, estados = [], onClose, onUpdate }) {
                     >
                       Cancelar
                     </button>
-                    <button type="submit" className="btn btn-primary btn-sm" disabled={loadingEdicion}>
+                    <button type="submit" className="btn btn-primary btn-sm" disabled={loadingEdicion || isOcupado}>
                       {loadingEdicion ? 'Guardando...' : 'Guardar Cambios del Nicho'}
                     </button>
                   </div>
@@ -245,11 +272,11 @@ export function NichoModal({ espacio, estados = [], onClose, onUpdate }) {
               </form>
             )}
 
-            {espacio.estado === 'Ocupado' ? (
-              <div className="alert alert-danger border-0 shadow-sm d-flex align-items-center gap-2 py-3 mb-3">
-                <i className="bi bi-lock-fill fs-4 text-danger"></i>
+            {isOcupado ? (
+              <div className="alert alert-danger border-0 shadow-sm d-flex align-items-center gap-3 py-3 mb-3">
+                <i className="bi bi-shield-lock-fill fs-3 text-danger flex-shrink-0"></i>
                 <div className="small">
-                  <strong>Estado Ocupado Bloqueado:</strong> Este nicho contiene una inhumación activa. Su estado se encuentra bloqueado y sólo puede actualizarse al procesar una <em>Exhumación</em> o <em>Traslado</em> en el <strong>Módulo de Inhumaciones</strong>.
+                  <strong>Nicho Ocupado (Edición y Eliminación Bloqueadas):</strong> Este nicho contiene una inhumación activa en el camposanto. Las opciones para <strong>editar datos técnicos</strong> y <strong>eliminar el nicho</strong> quedan deshabilitadas hasta que sea desalojado formalmente (proceso de <em>Exhumación</em> o <em>Traslado</em> en el <strong>Módulo de Inhumaciones</strong>).
                 </div>
               </div>
             ) : !isDisponible ? (
@@ -262,7 +289,7 @@ export function NichoModal({ espacio, estados = [], onClose, onUpdate }) {
             ) : null}
 
             {/* Formulario de Cambio Rápido de Estado (Bloqueado si está Ocupado) */}
-            {espacio.estado !== 'Ocupado' && (
+            {!isOcupado && (
               <form onSubmit={handleGuardarEstado} className="border-top pt-3">
                 <h6 className="fw-bold text-secondary mb-2" style={{ fontSize: '0.9rem' }}>
                   <i className="bi bi-gear-fill me-1"></i> Cambiar Estado Operacional
@@ -294,9 +321,11 @@ export function NichoModal({ espacio, estados = [], onClose, onUpdate }) {
               type="button"
               className="btn btn-outline-danger"
               onClick={handleEliminarNicho}
-              disabled={loadingEliminar}
+              disabled={loadingEliminar || isOcupado}
+              title={isOcupado ? "No se puede eliminar un nicho ocupado con inhumación activa" : "Eliminar nicho"}
             >
-              <i className="bi bi-trash-fill me-1"></i> Eliminar Nicho
+              <i className={`bi ${isOcupado ? 'bi-lock-fill' : 'bi-trash-fill'} me-1`}></i>
+              {isOcupado ? 'Eliminación Bloqueada' : 'Eliminar Nicho'}
             </button>
 
             <div className="d-flex gap-2">

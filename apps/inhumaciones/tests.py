@@ -328,4 +328,39 @@ class InhumacionesBackendTestCase(TestCase):
         self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
         self.assertIn("pdf", str(response.data).lower())
 
+    def test_mis_difuntos_cliente_seguridad(self):
+        """Valida que un usuario cliente solo pueda consultar difuntos de sus propios contratos y nichos."""
+        # 1. Crear usuario y cliente asociado
+        rol_cliente = Rol.objects.create(nombre="Cliente", descripcion="Perfil Cliente")
+        user_cliente = Usuario.objects.create_user(
+            username="cliente_test",
+            email="cliente_test@test.com",
+            password="password123",
+            rol=rol_cliente
+        )
+        self.cliente.usuario = user_cliente
+        self.cliente.save()
+
+        # 2. Inhumar un difunto en el contrato de este cliente
+        RegistroInhumacion.objects.create(
+            difunto=self.difunto,
+            espacio=self.espacio1,
+            contrato=self.contrato_activo,
+            usuario_registro=self.user,
+            fecha_sepelio=timezone.now(),
+            acta_renap_pdf="inhumaciones/actas_renap/test.pdf",
+            estado_inhumacion='ACTIVA'
+        )
+
+        # 3. Autenticar como cliente y consultar mis-difuntos
+        client_cliente = APIClient()
+        client_cliente.force_authenticate(user=user_cliente)
+
+        url = reverse('mis-difuntos-cliente')
+        resp = client_cliente.get(url)
+        self.assertEqual(resp.status_code, status.HTTP_200_OK)
+        self.assertEqual(len(resp.data), 1)
+        self.assertEqual(resp.data[0]['nombre_completo'], f"{self.difunto.nombres} {self.difunto.apellidos}".strip())
+        self.assertEqual(resp.data[0]['numero_contrato'], self.contrato_activo.numero_contrato)
+
 

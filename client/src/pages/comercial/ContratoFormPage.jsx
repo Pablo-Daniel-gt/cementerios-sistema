@@ -209,9 +209,15 @@ export const ContratoFormPage = () => {
       return;
     }
 
+    const numEnganche = parseFloat(formData.monto_enganche || 0);
+
+    if (numEnganche > 0 && pagoEngancheInmediato && metodoPagoEnganche !== 'EFECTIVO' && !boletaEnganche.trim()) {
+      toast.error('Debe ingresar el número de boleta o referencia bancaria para formalizar el contrato.');
+      return;
+    }
+
     setLoading(true);
     try {
-      const numEnganche = parseFloat(formData.monto_enganche || 0);
       const payload = {
         cliente: parseInt(formData.cliente, 10),
         modalidad: parseInt(formData.modalidad, 10),
@@ -427,14 +433,20 @@ export const ContratoFormPage = () => {
                         </div>
                         {metodoPagoEnganche !== 'EFECTIVO' && (
                           <div className="col-md-6">
-                            <label className="form-label small fw-bold mb-1">No. Boleta / Referencia:</label>
+                            <label className="form-label small fw-bold mb-1 text-danger">
+                              No. Boleta / Referencia: *
+                            </label>
                             <input
                               type="text"
-                              className="form-control form-control-sm"
-                              placeholder="Ej. Ref #123456"
+                              className={`form-control form-control-sm ${!boletaEnganche.trim() ? 'border-danger' : 'border-success'}`}
+                              placeholder="Ej. Ref / Boleta #123456"
                               value={boletaEnganche}
                               onChange={(e) => setBoletaEnganche(e.target.value)}
+                              required
                             />
+                            <small className="text-muted d-block mt-1" style={{ fontSize: '0.75rem' }}>
+                              Obligatorio para pagos bancarios o tarjeta.
+                            </small>
                           </div>
                         )}
                       </div>

@@ -9,6 +9,7 @@ import { RolesPage } from '../pages/roles/RolesPage';
 import { RolesFormPage } from '../pages/roles/RolesFormPage';
 import { BitacoraPage } from '../pages/bitacora/BitacoraPage';
 import { PortalClientePage } from '../pages/portal_cliente/PortalClientePage';
+import { MisDifuntosPage } from '../pages/portal_cliente/MisDifuntosPage';
 import { InventarioPage } from '../pages/inventario/InventarioPage';
 import { EstructurasPage } from '../pages/inventario/EstructurasPage';
 import { CotizadorPage } from '../pages/comercial/CotizadorPage';
@@ -122,6 +123,7 @@ export const AppRouter = () => {
         {/* Portal Cliente: Exclusivo Cliente Propietario (RF-03) */}
         <Route element={<ProtectedRoute allowedRoles={['Cliente Propietario']} />}>
           <Route path="/portal-cliente" element={<PortalClientePage />} />
+          <Route path="/portal-cliente/difuntos" element={<MisDifuntosPage />} />
         </Route>
       </Route>
 

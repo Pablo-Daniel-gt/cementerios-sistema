@@ -181,6 +181,17 @@ class ContratoSerializer(serializers.ModelSerializer):
                         "espacios_ids": f"Los siguientes espacios ya no están disponibles para venta: {codigos}."
                     })
 
+        # 3. Validación de número de boleta/referencia para cobro de enganche bancario o con tarjeta
+        pago_inmediato = attrs.get('pago_enganche_inmediato', False)
+        monto_eng = Decimal(str(attrs.get('monto_enganche', 0)))
+        if pago_inmediato and monto_eng > Decimal('0.00'):
+            metodo = attrs.get('metodo_pago_enganche', 'EFECTIVO')
+            boleta = (attrs.get('boleta_enganche') or '').strip() if attrs.get('boleta_enganche') else ''
+            if metodo in ['DEPOSITO_BANCO', 'TRANSFERENCIA', 'TARJETA'] and not boleta:
+                raise serializers.ValidationError({
+                    'boleta_enganche': 'El número de boleta o referencia es obligatorio para pagos bancarios o con tarjeta.'
+                })
+
         return attrs
 
     @transaction.atomic

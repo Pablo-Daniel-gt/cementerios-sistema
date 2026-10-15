@@ -41,7 +41,7 @@ from .serializers import (
     ReciboPagoSerializer,
     CotizacionSimuladorSerializer
 )
-from .pdf_generator import generar_pdf_cotizacion, generar_pdf_recibo
+from .pdf_generator import generar_pdf_cotizacion, generar_pdf_recibo, generar_pdf_reporte_morosos
 
 
 # ==============================================================================
@@ -358,7 +358,7 @@ class AlertasMoraView(APIView):
         description="Identifica contratos con cuotas o mantenimientos vencidos y los clasifica por nivel de riesgo.",
         responses={200: OpenApiResponse(description="Listado clasificado de morosidad")}
     )
-    def get(self, request):
+    def get(self, request, forzar_pdf=False):
         hoy = date.today()
 
         # 0. Garantizar que todos los contratos (Activos o Liquidados) tengan registro de mantenimiento anual para el año en curso
@@ -456,15 +456,45 @@ class AlertasMoraView(APIView):
                 c.monto_cuota
             )
 
+        # Filtrar exclusivamente los clientes morosos con MÁS DE 31 DÍAS de atraso (Operativo + Extrajudicial)
+        # Excluyendo cartera preventiva (1 a 30 días)
+        morosos_mayores_31 = alertas_operativas + alertas_extrajudiciales
+
+        # Si se solicita exportación en PDF
+        if forzar_pdf or request.query_params.get('pdf') == 'true' or request.GET.get('pdf') == 'true':
+            pdf_buffer = generar_pdf_reporte_morosos(morosos_mayores_31, hoy.strftime("%d/%m/%Y"))
+            response = HttpResponse(pdf_buffer.getvalue(), content_type='application/pdf')
+            response['Content-Disposition'] = f'attachment; filename="reporte_clientes_morosos_{hoy.strftime("%Y%m%d")}.pdf"'
+            return response
+
         return Response({
             'fecha_evaluacion': hoy.strftime("%Y-%m-%d"),
             'totales': {
                 'total_preventivo': len(alertas_preventivas),
                 'total_operativo': len(alertas_operativas),
                 'total_extrajudicial': len(alertas_extrajudiciales),
+                'total_morosos_31': len(morosos_mayores_31),
                 'total_alertas': len(alertas_preventivas) + len(alertas_operativas) + len(alertas_extrajudiciales)
             },
             'preventivo': alertas_preventivas,
             'operativo': alertas_operativas,
-            'extrajudicial': alertas_extrajudiciales
+            'extrajudicial': alertas_extrajudiciales,
+            'morosos_mayores_31': morosos_mayores_31
         }, status=status.HTTP_200_OK)
+
+
+# ==============================================================================
+# 9. ENDPOINT ESPECÍFICO DE DESCARGA PDF REPORTE DE MOROSOS (> 31 DÍAS)
+# ==============================================================================
+class ReporteMorososPDFView(AlertasMoraView):
+    """
+    GET /api/v1/comercial/reporte-morosos-pdf/
+    Genera y descarga directamente el informe oficial en PDF de los clientes en mora (> 31 días).
+    """
+    @extend_schema(
+        summary="Descargar Reporte Oficial de Clientes Morosos (> 31 días) en PDF",
+        description="Genera el informe ejecutivo en PDF de la cartera morosa para gestión de cobro.",
+        responses={200: OpenApiResponse(description="Archivo PDF del informe de morosidad")}
+    )
+    def get(self, request):
+        return super().get(request, forzar_pdf=True)

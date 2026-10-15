@@ -83,6 +83,14 @@ class ReciboPagoSerializer(serializers.ModelSerializer):
                         raise serializers.ValidationError({
                             'detalles': 'No existen cuotas de mantenimiento anual pendientes de pago para este contrato.'
                         })
+
+        metodo = attrs.get('metodo_pago')
+        boleta = (attrs.get('numero_boleta_banco') or '').strip() if attrs.get('numero_boleta_banco') else ''
+        if metodo in ['DEPOSITO_BANCO', 'TRANSFERENCIA', 'TARJETA'] and not boleta:
+            raise serializers.ValidationError({
+                'numero_boleta_banco': 'El número de boleta o transferencia es obligatorio para pagos bancarios o con tarjeta.'
+            })
+
         return attrs
 
     @transaction.atomic

@@ -195,3 +195,21 @@ class InventarioAPITestCase(TestCase):
         self.assertGreaterEqual(len(response.data), 1)
         self.assertIn('precio_base', response.data[0])
         self.assertIn('plazos_disponibles', response.data[0])
+
+    def test_bloqueo_edicion_y_eliminacion_nicho_ocupado(self):
+        """Valida que un nicho con estado 'Ocupado' no pueda ser editado ni eliminado."""
+        estado_ocupado = EstadoEspacio.objects.create(nombre_estado="Ocupado")
+        self.espacio.estado = estado_ocupado
+        self.espacio.save()
+
+        # 1. Intentar editar datos técnicos del nicho ocupado
+        url = f'/api/v1/inventario/espacios/{self.espacio.id_espacio}/'
+        payload = {"precio_individual": 25000.00}
+        resp_edit = self.client.patch(url, payload, format='json')
+        self.assertEqual(resp_edit.status_code, status.HTTP_400_BAD_REQUEST)
+        self.assertIn("ocupado", str(resp_edit.data).lower())
+
+        # 2. Intentar eliminar el nicho ocupado
+        resp_del = self.client.delete(url)
+        self.assertEqual(resp_del.status_code, status.HTTP_400_BAD_REQUEST)
+        self.assertIn("ocupado", str(resp_del.data).lower())

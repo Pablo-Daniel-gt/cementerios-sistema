@@ -9,7 +9,12 @@ Centraliza el enrutamiento de la API REST para el Módulo D:
 
 from django.urls import path, include
 from rest_framework.routers import DefaultRouter
-from .views import DifuntoViewSet, RegistroInhumacionViewSet, ConsultaPublicaMemorialView
+from .views import (
+    DifuntoViewSet,
+    RegistroInhumacionViewSet,
+    ConsultaPublicaMemorialView,
+    MisDifuntosClienteView
+)
 
 router = DefaultRouter()
 router.register(r'difuntos', DifuntoViewSet, basename='difunto')
@@ -18,7 +23,10 @@ router.register(r'registros', RegistroInhumacionViewSet, basename='registro-inhu
 urlpatterns = [
     # Endpoint de consulta pública sin autenticación
     path('publico/buscar/', ConsultaPublicaMemorialView.as_view(), name='publico-buscar-memorial'),
-    
+
+    # Endpoint privado seguro para portal del cliente
+    path('mis-difuntos/', MisDifuntosClienteView.as_view(), name='mis-difuntos-cliente'),
+
     # Endpoints CRUD de administración
     path('', include(router.urls)),
 ]

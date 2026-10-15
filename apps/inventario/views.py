@@ -260,3 +260,18 @@ class EspacioFisicoViewSet(viewsets.ModelViewSet):
 
         return queryset
 
+    def destroy(self, request, *args, **kwargs):
+        espacio = self.get_object()
+        esta_ocupado = (espacio.estado and espacio.estado.nombre_estado == 'Ocupado') or espacio.inhumaciones.filter(estado_inhumacion='ACTIVA').exists()
+        if esta_ocupado:
+            return Response(
+                {"detail": "No se puede eliminar un nicho que se encuentra ocupado con una inhumación activa. Debe quedar desalojado antes de poder eliminarse."},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+        if hasattr(espacio, 'detalle_contrato') and espacio.detalle_contrato is not None:
+            return Response(
+                {"detail": "No se puede eliminar un nicho que se encuentra asignado a un contrato comercial vigente."},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+        return super().destroy(request, *args, **kwargs)
+

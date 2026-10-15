@@ -17,7 +17,8 @@ from .views import (
     ControlMantenimientoViewSet,
     ReciboPagoViewSet,
     CotizadorView,
-    AlertasMoraView
+    AlertasMoraView,
+    ReporteMorososPDFView
 )
 
 router = DefaultRouter()
@@ -32,6 +33,8 @@ urlpatterns = [
     # Endpoints especializados de lógica de negocio
     path('cotizar/', CotizadorView.as_view(), name='cotizador-simulador'),
     path('alertas-mora/', AlertasMoraView.as_view(), name='alertas-mora'),
+    path('alertas-mora/reporte-pdf/', ReporteMorososPDFView.as_view(), name='reporte-morosos-pdf'),
+    path('reporte-morosos-pdf/', ReporteMorososPDFView.as_view(), name='reporte-morosos-pdf-alias'),
 
     # Endpoints CRUD del Router DRF
     path('', include(router.urls)),

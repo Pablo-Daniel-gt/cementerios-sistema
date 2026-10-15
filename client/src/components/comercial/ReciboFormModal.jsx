@@ -104,6 +104,11 @@ export const ReciboFormModal = ({ show, contrato, onClose, onSuccess }) => {
       return;
     }
 
+    if (formData.metodo_pago !== 'EFECTIVO' && !formData.numero_boleta_banco?.trim()) {
+      toast.error('Debe ingresar el número de boleta o referencia bancaria para pagos con depósito, transferencia o tarjeta.');
+      return;
+    }
+
     setLoading(true);
     try {
       const planCuotaId = (conceptoSeleccionado === 'CUOTA_AMORTIZACION' && cuotaIdSeleccionada) ? parseInt(cuotaIdSeleccionada, 10) : null;
