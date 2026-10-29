@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import toast from 'react-hot-toast';
 import { crearDifunto, actualizarDifunto } from '../../api/inhumaciones.api';
+import { filterDigits, handleNumericKeyDown } from '../../utils/inputValidation';
 
 export const DifuntoFormModal = ({ difunto, onClose, onSuccess }) => {
   const [formData, setFormData] = useState({
@@ -19,7 +20,7 @@ export const DifuntoFormModal = ({ difunto, onClose, onSuccess }) => {
   useEffect(() => {
     if (difunto) {
       setFormData({
-        cui: difunto.cui || '',
+        cui: filterDigits(difunto.cui || ''),
         nombres: difunto.nombres || '',
         apellidos: difunto.apellidos || '',
         fecha_nacimiento: difunto.fecha_nacimiento || '',
@@ -32,9 +33,10 @@ export const DifuntoFormModal = ({ difunto, onClose, onSuccess }) => {
 
   const handleChange = (e) => {
     const { name, value } = e.target;
+    const finalValue = name === 'cui' ? filterDigits(value).slice(0, 13) : value;
     setFormData((prev) => ({
       ...prev,
-      [name]: value,
+      [name]: finalValue,
     }));
   };
 
@@ -109,14 +111,16 @@ export const DifuntoFormModal = ({ difunto, onClose, onSuccess }) => {
                   <label className="form-label fw-semibold">CUI / DPI (RENAP)</label>
                   <input
                     type="text"
+                    inputMode="numeric"
                     name="cui"
                     className="form-control"
                     placeholder="Ej. 1234567890101 (13 dígitos)"
                     maxLength={13}
                     value={formData.cui}
+                    onKeyDown={handleNumericKeyDown}
                     onChange={handleChange}
                   />
-                  <small className="text-muted">Dejar en blanco para neonatos sin CUI</small>
+                  <small className="text-muted">Dejar en blanco para neonatos sin CUI (únicamente números)</small>
                 </div>
 
                 {/* Nombres */}

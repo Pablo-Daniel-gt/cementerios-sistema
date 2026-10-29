@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import toast from 'react-hot-toast';
 import { cambiarEstadoEspacio, actualizarEspacio, eliminarEspacio } from '../../api/inventario.api';
 import { getEstadoColor } from '../../constants/estadoColors';
+import { filterDecimal, handleDecimalKeyDown } from '../../utils/inputValidation';
 
 /**
  * Modal de Detalle, Edición Individual, Cotización, Apartado y Eliminación de Nicho
@@ -10,23 +11,16 @@ import { getEstadoColor } from '../../constants/estadoColors';
 export function NichoModal({ espacio, estados = [], onClose, onUpdate }) {
   const navigate = useNavigate();
 
-  if (!espacio) return null;
-
   const [loadingEstado, setLoadingEstado] = useState(false);
   const [loadingEdicion, setLoadingEdicion] = useState(false);
   const [loadingEliminar, setLoadingEliminar] = useState(false);
 
-  const [nuevoEstadoId, setNuevoEstadoId] = useState(espacio.estado_id || '');
-  const [precioIndividual, setPrecioIndividual] = useState(espacio.precio_individual || '');
-  const [materialConstruccion, setMaterialConstruccion] = useState(espacio.material_construccion || 'Concreto Reforzado');
-  const [dimensiones, setDimensiones] = useState(espacio.dimensiones || '2.20m x 0.90m x 0.80m');
+  const [nuevoEstadoId, setNuevoEstadoId] = useState(espacio?.estado_id || '');
+  const [precioIndividual, setPrecioIndividual] = useState(espacio?.precio_individual || '');
+  const [materialConstruccion, setMaterialConstruccion] = useState(espacio?.material_construccion || 'Concreto Reforzado');
+  const [dimensiones, setDimensiones] = useState(espacio?.dimensiones || '2.20m x 0.90m x 0.80m');
 
   const [modoEdicion, setModoEdicion] = useState(false);
-
-  const estadoNombre = espacio.estado_nombre || espacio.estado || '';
-  const isOcupado = estadoNombre.toLowerCase() === 'ocupado' || Boolean(espacio.tiene_inhumacion_activa);
-  const isDisponible = estadoNombre.toLowerCase() === 'disponible';
-  const colorHex = getEstadoColor(espacio.estado);
 
   useEffect(() => {
     if (espacio) {
@@ -37,6 +31,13 @@ export function NichoModal({ espacio, estados = [], onClose, onUpdate }) {
       setModoEdicion(false);
     }
   }, [espacio]);
+
+  if (!espacio) return null;
+
+  const estadoNombre = espacio.estado_nombre || espacio.estado || '';
+  const isOcupado = estadoNombre.toLowerCase() === 'ocupado' || Boolean(espacio.tiene_inhumacion_activa);
+  const isDisponible = estadoNombre.toLowerCase() === 'disponible';
+  const colorHex = getEstadoColor(espacio.estado);
 
   // 1. Guardar Estado
   const handleGuardarEstado = async (e) => {
@@ -224,9 +225,11 @@ export function NichoModal({ espacio, estados = [], onClose, onUpdate }) {
                     <input
                       type="number"
                       step="0.01"
+                      min="0"
                       className="form-control"
                       value={precioIndividual}
-                      onChange={(e) => setPrecioIndividual(e.target.value)}
+                      onKeyDown={handleDecimalKeyDown}
+                      onChange={(e) => setPrecioIndividual(filterDecimal(e.target.value))}
                       placeholder="Ej. 15000.00"
                       disabled={espacio.en_contrato || isOcupado}
                     />

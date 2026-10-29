@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import toast from 'react-hot-toast';
+import { filterDigits, handleNumericKeyDown } from '../../utils/inputValidation';
 
 export const ContactoPage = () => {
   const [formData, setFormData] = useState({
@@ -13,9 +14,11 @@ export const ContactoPage = () => {
   const [loading, setLoading] = useState(false);
 
   const handleChange = (e) => {
+    const { name, value } = e.target;
+    const finalVal = name === 'telefono' ? filterDigits(value).slice(0, 15) : value;
     setFormData({
       ...formData,
-      [e.target.name]: e.target.value
+      [name]: finalVal
     });
   };
 
@@ -197,11 +200,14 @@ export const ContactoPage = () => {
                           </span>
                           <input
                             type="tel"
+                            inputMode="numeric"
                             name="telefono"
                             required
                             className="form-control border-start-0"
-                            placeholder="Ej. 5544-3322"
+                            placeholder="Ej. 55443322"
+                            maxLength={15}
                             value={formData.telefono}
+                            onKeyDown={handleNumericKeyDown}
                             onChange={handleChange}
                           />
                         </div>

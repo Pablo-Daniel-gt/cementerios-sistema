@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import toast from 'react-hot-toast';
 import { crearEspacio, actualizarEspacio } from '../../api/inventario.api';
+import { filterDigits, filterDecimal, handleIntegerKeyDown, handleDecimalKeyDown } from '../../utils/inputValidation';
 
 export function NichoFormModal({ nicho = null, estructuras = [], estados = [], defaultEstructuraId = '', onClose, onSuccess }) {
   const [formData, setFormData] = useState({
@@ -145,7 +146,8 @@ export function NichoFormModal({ nicho = null, estructuras = [], estados = [], d
                     min="1"
                     className="form-control"
                     value={formData.posicion_fila}
-                    onChange={(e) => setFormData({ ...formData, posicion_fila: e.target.value })}
+                    onKeyDown={handleIntegerKeyDown}
+                    onChange={(e) => setFormData({ ...formData, posicion_fila: filterDigits(e.target.value) })}
                     required
                   />
                 </div>
@@ -158,7 +160,8 @@ export function NichoFormModal({ nicho = null, estructuras = [], estados = [], d
                     min="1"
                     className="form-control"
                     value={formData.posicion_columna}
-                    onChange={(e) => setFormData({ ...formData, posicion_columna: e.target.value })}
+                    onKeyDown={handleIntegerKeyDown}
+                    onChange={(e) => setFormData({ ...formData, posicion_columna: filterDigits(e.target.value) })}
                     required
                   />
                 </div>
@@ -182,10 +185,12 @@ export function NichoFormModal({ nicho = null, estructuras = [], estados = [], d
                   <input
                     type="number"
                     step="0.01"
+                    min="0"
                     className="form-control"
                     placeholder="Ej. 15000.00"
                     value={formData.precio_individual}
-                    onChange={(e) => setFormData({ ...formData, precio_individual: e.target.value })}
+                    onKeyDown={handleDecimalKeyDown}
+                    onChange={(e) => setFormData({ ...formData, precio_individual: filterDecimal(e.target.value) })}
                   />
                 </div>
 

@@ -4,6 +4,7 @@ import toast from 'react-hot-toast';
 import { createContrato, getModalidadesVenta, getEstadosContrato } from '../../api/comercial.api';
 import { obtenerClientes } from '../../api/cuentas.api';
 import { getEspacios, getEstructuras } from '../../api/inventario.api';
+import { filterDigits, filterDecimal, handleNumericKeyDown, handleDecimalKeyDown } from '../../utils/inputValidation';
 
 /**
  * Formulario de Creación de Nuevos Contratos Comerciales
@@ -156,7 +157,13 @@ export const ContratoFormPage = () => {
 
   const handleChange = (e) => {
     const { name, value } = e.target;
-    setFormData((prev) => ({ ...prev, [name]: value }));
+    let cleanValue = value;
+    if (name === 'numero_contrato') {
+      cleanValue = filterDigits(value);
+    } else if (name === 'monto_total') {
+      cleanValue = filterDecimal(value);
+    }
+    setFormData((prev) => ({ ...prev, [name]: cleanValue }));
   };
 
   const handleEspacioToggle = (id) => {
@@ -277,13 +284,15 @@ export const ContratoFormPage = () => {
                 <label className="form-label fw-bold">Número de Contrato:</label>
                 <input
                   type="text"
+                  inputMode="numeric"
                   name="numero_contrato"
                   className="form-control fw-bold text-primary bg-light"
-                  placeholder="(ej. CNT-2026-0001)"
+                  placeholder="Ej. 20260001 (o dejar vacío para autogenerar)"
                   value={formData.numero_contrato}
+                  onKeyDown={handleNumericKeyDown}
                   onChange={handleChange}
                 />
-                <small className="text-muted">Si se deja vacío, el sistema generará uno automáticamente.</small>
+                <small className="text-muted">Si se deja vacío, el sistema generará uno automáticamente (únicamente números).</small>
               </div>
 
               <div className="mb-3">
@@ -349,9 +358,11 @@ export const ContratoFormPage = () => {
                   <input
                     type="number"
                     step="0.01"
+                    min="0"
                     name="monto_total"
                     className="form-control fw-bold text-success fs-5"
                     value={formData.monto_total}
+                    onKeyDown={handleDecimalKeyDown}
                     onChange={handleChange}
                     required
                   />
@@ -438,14 +449,16 @@ export const ContratoFormPage = () => {
                             </label>
                             <input
                               type="text"
+                              inputMode="numeric"
                               className={`form-control form-control-sm ${!boletaEnganche.trim() ? 'border-danger' : 'border-success'}`}
-                              placeholder="Ej. Ref / Boleta #123456"
+                              placeholder="Ej. 12345678"
                               value={boletaEnganche}
-                              onChange={(e) => setBoletaEnganche(e.target.value)}
+                              onKeyDown={handleNumericKeyDown}
+                              onChange={(e) => setBoletaEnganche(filterDigits(e.target.value))}
                               required
                             />
                             <small className="text-muted d-block mt-1" style={{ fontSize: '0.75rem' }}>
-                              Obligatorio para pagos bancarios o tarjeta.
+                              Obligatorio para pagos bancarios o tarjeta (únicamente números).
                             </small>
                           </div>
                         )}

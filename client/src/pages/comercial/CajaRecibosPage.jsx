@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import toast from 'react-hot-toast';
 import { getRecibos, updateRecibo, descargarReciboPDF } from '../../api/comercial.api';
+import { filterDigits, filterDecimal, handleNumericKeyDown, handleDecimalKeyDown } from '../../utils/inputValidation';
 
 /**
  * Vista de Caja y Recibos de Pago (Módulo C)
@@ -451,10 +452,12 @@ const EditarReciboModal = ({ recibo, onClose, onSuccess }) => {
                 <input
                   type="number"
                   step="0.01"
+                  min="0"
                   className="form-control fw-bold text-success fs-5"
                   placeholder="Ej. 1000.00"
                   value={formData.monto_ingresado}
-                  onChange={(e) => setFormData({ ...formData, monto_ingresado: e.target.value })}
+                  onKeyDown={handleDecimalKeyDown}
+                  onChange={(e) => setFormData({ ...formData, monto_ingresado: filterDecimal(e.target.value) })}
                   required
                 />
                 <small className="text-muted">Si modifica el monto del recibo, la amortización del contrato se recalculará automáticamente.</small>
@@ -482,12 +485,17 @@ const EditarReciboModal = ({ recibo, onClose, onSuccess }) => {
                   <label className="form-label fw-bold">No. Boleta / Referencia Bancaria *</label>
                   <input
                     type="text"
+                    inputMode="numeric"
                     className="form-control"
-                    placeholder="Ej. Depósito #98765432"
+                    placeholder="Ej. 98765432"
                     value={formData.numero_boleta_banco}
-                    onChange={(e) => setFormData({ ...formData, numero_boleta_banco: e.target.value })}
+                    onKeyDown={handleNumericKeyDown}
+                    onChange={(e) => setFormData({ ...formData, numero_boleta_banco: filterDigits(e.target.value) })}
                     required={formData.metodo_pago !== 'EFECTIVO'}
                   />
+                  <small className="text-muted d-block mt-1" style={{ fontSize: '0.75rem' }}>
+                    Únicamente dígitos numéricos.
+                  </small>
                 </div>
               )}
 

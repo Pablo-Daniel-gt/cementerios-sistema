@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import toast from 'react-hot-toast';
 import { crearEstructura, actualizarEstructura } from '../../api/inventario.api';
+import { filterDigits, filterDecimal, handleIntegerKeyDown, handleDecimalKeyDown } from '../../utils/inputValidation';
 
 export function EstructuraModal({ estructura = null, sectores = [], tipos = [], onClose, onSuccess }) {
   const [estructuraForm, setEstructuraForm] = useState({
@@ -160,7 +161,8 @@ export function EstructuraModal({ estructura = null, sectores = [], tipos = [], 
                     min="1"
                     className="form-control"
                     value={estructuraForm.total_filas}
-                    onChange={(e) => setEstructuraForm({ ...estructuraForm, total_filas: parseInt(e.target.value) || 1 })}
+                    onKeyDown={handleIntegerKeyDown}
+                    onChange={(e) => setEstructuraForm({ ...estructuraForm, total_filas: parseInt(filterDigits(e.target.value), 10) || '' })}
                     required
                   />
                 </div>
@@ -172,7 +174,8 @@ export function EstructuraModal({ estructura = null, sectores = [], tipos = [], 
                     min="1"
                     className="form-control"
                     value={estructuraForm.total_columnas}
-                    onChange={(e) => setEstructuraForm({ ...estructuraForm, total_columnas: parseInt(e.target.value) || 1 })}
+                    onKeyDown={handleIntegerKeyDown}
+                    onChange={(e) => setEstructuraForm({ ...estructuraForm, total_columnas: parseInt(filterDigits(e.target.value), 10) || '' })}
                     required
                   />
                 </div>
@@ -182,7 +185,7 @@ export function EstructuraModal({ estructura = null, sectores = [], tipos = [], 
                   <input
                     type="text"
                     className="form-control bg-light"
-                    value={`${estructuraForm.total_filas * estructuraForm.total_columnas} nichos`}
+                    value={`${(Number(estructuraForm.total_filas) || 0) * (Number(estructuraForm.total_columnas) || 0)} nichos`}
                     disabled
                   />
                 </div>
@@ -196,7 +199,8 @@ export function EstructuraModal({ estructura = null, sectores = [], tipos = [], 
                     className="form-control"
                     placeholder="Ej. 300000.00"
                     value={estructuraForm.precio_estructura_completa}
-                    onChange={(e) => setEstructuraForm({ ...estructuraForm, precio_estructura_completa: e.target.value })}
+                    onKeyDown={handleDecimalKeyDown}
+                    onChange={(e) => setEstructuraForm({ ...estructuraForm, precio_estructura_completa: filterDecimal(e.target.value) })}
                   />
                 </div>
               </div>

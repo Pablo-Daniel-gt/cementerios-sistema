@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import { useLocation, Link } from 'react-router-dom';
 import { simularCotizacionPublica, descargarCotizacionPublicaPDF, getCatalogoEspaciosPublico } from '../../api/publico.api';
 import toast from 'react-hot-toast';
+import { handleDecimalKeyDown } from '../../utils/inputValidation';
 
 export const CotizadorPublicoPage = () => {
   const location = useLocation();
@@ -180,6 +181,7 @@ export const CotizadorPublicoPage = () => {
                       min="1000"
                       step="500"
                       value={montoTotal}
+                      onKeyDown={handleDecimalKeyDown}
                       onChange={(e) => setMontoTotal(Number(e.target.value))}
                     />
                   </div>

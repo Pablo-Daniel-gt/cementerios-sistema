@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import toast from 'react-hot-toast';
 import { simularCotizacion, descargarCotizacionPDF } from '../../api/comercial.api';
 import { AmortizacionTabla } from './AmortizacionTabla';
+import { filterDecimal, handleDecimalKeyDown } from '../../utils/inputValidation';
 
 /**
  * Modal de Cotizador Financiero Rápido (RF-01)
@@ -20,9 +21,11 @@ export const CotizadorModal = ({ show, onClose, onUsarCotizacion }) => {
   if (!show) return null;
 
   const handleChange = (e) => {
+    const { name, value } = e.target;
+    const finalVal = (name === 'monto_total' || name === 'monto_enganche') ? filterDecimal(value) : value;
     setFormData({
       ...formData,
-      [e.target.name]: e.target.value
+      [name]: finalVal
     });
   };
 
@@ -103,9 +106,11 @@ export const CotizadorModal = ({ show, onClose, onUsarCotizacion }) => {
                 <input
                   type="number"
                   step="0.01"
+                  min="0"
                   name="monto_total"
                   className="form-control"
                   value={formData.monto_total}
+                  onKeyDown={handleDecimalKeyDown}
                   onChange={handleChange}
                   required
                 />
@@ -116,9 +121,11 @@ export const CotizadorModal = ({ show, onClose, onUsarCotizacion }) => {
                 <input
                   type="number"
                   step="0.01"
+                  min="0"
                   name="monto_enganche"
                   className="form-control"
                   value={formData.monto_enganche}
+                  onKeyDown={handleDecimalKeyDown}
                   onChange={handleChange}
                   required
                 />

@@ -10,6 +10,7 @@ import {
   actualizarCliente,
 } from '../../api/cuentas.api';
 import toast from 'react-hot-toast';
+import { filterDigits, handleNumericKeyDown } from '../../utils/inputValidation';
 
 export const UsuariosFormPage = () => {
   const { register, handleSubmit, setValue, watch, formState: { errors } } = useForm();
@@ -55,7 +56,7 @@ export const UsuariosFormPage = () => {
           setValue('email', data.email);
           setValue('first_name', data.first_name || '');
           setValue('last_name', data.last_name || '');
-          setValue('telefono', data.telefono || '');
+          setValue('telefono', filterDigits(data.telefono || ''));
           setValue('rol', data.rol || '');
           setValue('is_active', data.is_active);
 
@@ -108,7 +109,7 @@ export const UsuariosFormPage = () => {
         if (clienteSel.nombres) setValue('first_name', clienteSel.nombres);
         if (clienteSel.apellidos) setValue('last_name', clienteSel.apellidos);
         if (clienteSel.correo) setValue('email', clienteSel.correo);
-        if (clienteSel.telefono) setValue('telefono', clienteSel.telefono);
+        if (clienteSel.telefono) setValue('telefono', filterDigits(clienteSel.telefono));
 
         toast.success(`Datos auto-completados desde la ficha del cliente "${clienteSel.nombres} ${clienteSel.apellidos}"`, {
           icon: '✨',
@@ -123,7 +124,7 @@ export const UsuariosFormPage = () => {
       email: data.email,
       first_name: data.first_name || '',
       last_name: data.last_name || '',
-      telefono: data.telefono || '',
+      telefono: filterDigits(data.telefono || ''),
       rol: data.rol ? parseInt(data.rol, 10) : null,
       is_active: data.is_active,
     };
@@ -324,9 +325,16 @@ export const UsuariosFormPage = () => {
                 <label className="form-label fw-semibold">Teléfono</label>
                 <input
                   type="text"
+                  inputMode="numeric"
                   className="form-control"
-                  placeholder="Número de contacto"
-                  {...register('telefono')}
+                  placeholder="Ej. 55554444"
+                  maxLength={15}
+                  onKeyDown={handleNumericKeyDown}
+                  {...register('telefono', {
+                    onChange: (e) => {
+                      e.target.value = filterDigits(e.target.value).slice(0, 15);
+                    },
+                  })}
                 />
               </div>
 

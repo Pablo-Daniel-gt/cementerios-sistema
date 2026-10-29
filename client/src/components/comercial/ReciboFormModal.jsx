@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import toast from 'react-hot-toast';
 import { createRecibo, getPlanCuotas, getControlMantenimientos } from '../../api/comercial.api';
+import { filterDigits, filterDecimal, handleNumericKeyDown, handleDecimalKeyDown } from '../../utils/inputValidation';
 
 /**
  * Modal para Generación y Registro de Recibos de Caja
@@ -231,9 +232,11 @@ export const ReciboFormModal = ({ show, contrato, onClose, onSuccess }) => {
                 <input
                   type="number"
                   step="0.01"
+                  min="0"
                   className="form-control fw-bold text-success fs-5"
                   value={montoIngresado}
-                  onChange={(e) => setMontoIngresado(e.target.value)}
+                  onKeyDown={handleDecimalKeyDown}
+                  onChange={(e) => setMontoIngresado(filterDecimal(e.target.value))}
                   required
                 />
                 {conceptoSeleccionado === 'ENGANCHE' && (
@@ -274,11 +277,17 @@ export const ReciboFormModal = ({ show, contrato, onClose, onSuccess }) => {
                   <label className="form-label fw-bold">No. Boleta / Referencia Bancaria:</label>
                   <input
                     type="text"
+                    inputMode="numeric"
                     className="form-control"
+                    placeholder="Ej. 12345678"
                     value={formData.numero_boleta_banco}
-                    onChange={(e) => setFormData({ ...formData, numero_boleta_banco: e.target.value })}
+                    onKeyDown={handleNumericKeyDown}
+                    onChange={(e) => setFormData({ ...formData, numero_boleta_banco: filterDigits(e.target.value) })}
                     required
                   />
+                  <small className="text-muted d-block mt-1" style={{ fontSize: '0.75rem' }}>
+                    Obligatorio para pagos bancarios o tarjeta (únicamente números).
+                  </small>
                 </div>
               )}
 

@@ -3,6 +3,7 @@ import { useForm } from 'react-hook-form';
 import { useNavigate, useParams, Link } from 'react-router-dom';
 import { crearCliente, obtenerCliente, actualizarCliente, obtenerUsuarios } from '../../api/cuentas.api';
 import toast from 'react-hot-toast';
+import { filterDigits, handleNumericKeyDown } from '../../utils/inputValidation';
 
 export const ClientesFormPage = () => {
   const { register, handleSubmit, setValue, watch, formState: { errors } } = useForm();
@@ -25,10 +26,10 @@ export const ClientesFormPage = () => {
         try {
           const res = await obtenerCliente(id);
           const data = res.data;
-          setValue('cui', data.cui);
+          setValue('cui', filterDigits(data.cui));
           setValue('nombres', data.nombres);
           setValue('apellidos', data.apellidos);
-          setValue('telefono', data.telefono || '');
+          setValue('telefono', filterDigits(data.telefono || ''));
           setValue('correo', data.correo || '');
           setValue('direccion', data.direccion || '');
           setValue('usuario', data.usuario || '');
@@ -79,8 +80,8 @@ export const ClientesFormPage = () => {
       if (usuarioSeleccionado) {
         if (usuarioSeleccionado.first_name) setValue('nombres', usuarioSeleccionado.first_name);
         if (usuarioSeleccionado.last_name) setValue('apellidos', usuarioSeleccionado.last_name);
-        if (usuarioSeleccionado.email) setValue('correo', usuarioSeleccionado.email);
-        if (usuarioSeleccionado.telefono) setValue('telefono', usuarioSeleccionado.telefono);
+        if (usuarioSeleccionado.correo || usuarioSeleccionado.email) setValue('correo', usuarioSeleccionado.correo || usuarioSeleccionado.email);
+        if (usuarioSeleccionado.telefono) setValue('telefono', filterDigits(usuarioSeleccionado.telefono));
 
         toast.success(`Datos auto-completados desde la cuenta de usuario "${usuarioSeleccionado.username}"`, {
           icon: '✨',
@@ -92,6 +93,8 @@ export const ClientesFormPage = () => {
   const onSubmit = async (data) => {
     const payload = {
       ...data,
+      cui: filterDigits(data.cui),
+      telefono: filterDigits(data.telefono),
       usuario: data.usuario ? parseInt(data.usuario, 10) : null,
     };
 
@@ -160,14 +163,19 @@ export const ClientesFormPage = () => {
                 <label className="form-label fw-semibold">CUI / DPI <span className="text-danger">*</span></label>
                 <input
                   type="text"
+                  inputMode="numeric"
                   className={`form-control ${errors.cui ? 'is-invalid' : ''}`}
                   placeholder="Ej. 1234567890101"
                   maxLength={13}
+                  onKeyDown={handleNumericKeyDown}
                   {...register('cui', {
                     required: 'El CUI es obligatorio',
                     pattern: {
                       value: /^[0-9]{9,13}$/,
                       message: 'El CUI debe tener entre 9 y 13 dígitos numéricos',
+                    },
+                    onChange: (e) => {
+                      e.target.value = filterDigits(e.target.value).slice(0, 13);
                     },
                   })}
                 />
@@ -179,9 +187,16 @@ export const ClientesFormPage = () => {
                 <label className="form-label fw-semibold">Teléfono de Contacto</label>
                 <input
                   type="text"
+                  inputMode="numeric"
                   className="form-control"
                   placeholder="Ej. 55554444"
-                  {...register('telefono')}
+                  maxLength={15}
+                  onKeyDown={handleNumericKeyDown}
+                  {...register('telefono', {
+                    onChange: (e) => {
+                      e.target.value = filterDigits(e.target.value).slice(0, 15);
+                    },
+                  })}
                 />
               </div>
 
