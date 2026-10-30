@@ -158,9 +158,7 @@ export const ContratoFormPage = () => {
   const handleChange = (e) => {
     const { name, value } = e.target;
     let cleanValue = value;
-    if (name === 'numero_contrato') {
-      cleanValue = filterDigits(value);
-    } else if (name === 'monto_total') {
+    if (name === 'monto_total') {
       cleanValue = filterDecimal(value);
     }
     setFormData((prev) => ({ ...prev, [name]: cleanValue }));
@@ -281,18 +279,15 @@ export const ContratoFormPage = () => {
             </div>
             <div className="card-body">
               <div className="mb-3">
-                <label className="form-label fw-bold">Número de Contrato:</label>
+                <label className="form-label fw-bold">Código de Contrato:</label>
                 <input
                   type="text"
-                  inputMode="numeric"
                   name="numero_contrato"
                   className="form-control fw-bold text-primary bg-light"
-                  placeholder="Ej. 20260001 (o dejar vacío para autogenerar)"
+                  placeholder="Ej. CNT-2026-0001"
                   value={formData.numero_contrato}
-                  onKeyDown={handleNumericKeyDown}
                   onChange={handleChange}
                 />
-                <small className="text-muted">Si se deja vacío, el sistema generará uno automáticamente (únicamente números).</small>
               </div>
 
               <div className="mb-3">

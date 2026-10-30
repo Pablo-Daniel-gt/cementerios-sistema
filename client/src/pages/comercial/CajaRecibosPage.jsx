@@ -148,7 +148,7 @@ export const CajaRecibosPage = () => {
                 <thead className="table-dark">
                   <tr>
                     <th>No. Recibo</th>
-                    <th>No. Contrato</th>
+                    <th>Código de Contrato</th>
                     <th>Cajero / Operador</th>
                     <th>Fecha y Hora</th>
                     <th>Método de Pago</th>
@@ -296,7 +296,7 @@ const VerReciboModal = ({ recibo, onClose, onPrint }) => {
           <div className="modal-body p-4">
             <div className="row g-3 mb-3 border-bottom pb-3">
               <div className="col-md-6">
-                <small className="text-muted d-block">Número de Contrato:</small>
+                <small className="text-muted d-block">Código de Contrato:</small>
                 <strong className="fs-6 text-primary">{recibo.contrato_numero}</strong>
               </div>
               <div className="col-md-6 text-md-end">

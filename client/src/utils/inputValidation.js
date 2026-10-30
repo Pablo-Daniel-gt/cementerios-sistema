@@ -28,7 +28,7 @@ export const filterDecimal = (value) => {
 };
 
 /**
- * Manejador onKeyDown para campos estrictamente numéricos (DPI, Teléfono, No. Boleta, No. Contrato).
+ * Manejador onKeyDown para campos estrictamente numéricos (DPI, Teléfono, No. Boleta).
  * Bloquea la pulsación de cualquier letra o caracter especial, permitiendo teclas de control y atajos.
  * @param {KeyboardEvent} e
  */

@@ -90,7 +90,7 @@ export const ContratosListPage = () => {
                 <input
                   type="text"
                   className="form-control"
-                  placeholder="Buscar por número de contrato, nombre de cliente..."
+                  placeholder="Buscar por código de contrato, nombre de cliente..."
                   value={busqueda}
                   onChange={(e) => setBusqueda(e.target.value)}
                 />
@@ -118,7 +118,7 @@ export const ContratosListPage = () => {
               <table className="table table-hover align-middle mb-0">
                 <thead className="table-dark">
                   <tr>
-                    <th>No. Contrato</th>
+                    <th>Código de Contrato</th>
                     <th>Cliente / Titular</th>
                     <th>Modalidad Venta</th>
                     <th>Precio Total (Q)</th>
